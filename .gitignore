@@ -9,4 +9,13 @@ __pycache__/
 
 # Pytest / Cache
 .pytest_cache/
+pytest-cache-files-*/
 .coverage
+
+# SQLite database
+*.db
+*.sqlite3
+
+# Node / Next.js
+node_modules/
+.next/

@@ -12,11 +12,23 @@ import {
   RefreshCw,
   CheckCircle2,
   Filter,
+  Flame,
+  X,
+  Layers,
+  Calendar,
+  ExternalLink,
 } from "lucide-react";
-import { fetchDashboardStats, DashboardStats } from "@/lib/api";
+import {
+  fetchDashboardStats,
+  fetchEmergingIssues,
+  DashboardStats,
+  EmergingIssue,
+} from "@/lib/api";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [emergingIssues, setEmergingIssues] = useState<EmergingIssue[]>([]);
+  const [selectedCluster, setSelectedCluster] = useState<EmergingIssue | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,8 +36,12 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchDashboardStats();
-      setStats(data);
+      const [statsData, issuesData] = await Promise.all([
+        fetchDashboardStats(),
+        fetchEmergingIssues(2).catch(() => []),
+      ]);
+      setStats(statsData);
+      setEmergingIssues(issuesData);
     } catch (err: unknown) {
       console.error(err);
       setError("Unable to connect to the CivicTriage backend API. Ensure FastAPI is running on port 8000.");
@@ -166,6 +182,101 @@ export default function DashboardPage() {
           </div>
         </Link>
       </div>
+      {/* Emerging Issues Section (Phase 5) */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-red-950 text-red-400 border border-red-800/60">
+              <Flame className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-white tracking-tight uppercase tracking-wider text-xs">
+                  Emerging Issues & Incident Clusters
+                </h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-950 text-red-400 border border-red-800/60">
+                  {emergingIssues.length} Active Hotspots
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Multi-complaint grievance clusters grouped by locality and time span for urgent field dispatch.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/reports"
+            className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+          >
+            <span>Accountability Reports</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+
+        <div className="p-5">
+          {loading ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              Detecting active grievance clusters...
+            </div>
+          ) : emergingIssues.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {emergingIssues.map((issue, idx) => {
+                const isHighVolume = issue.complaints_count >= 5;
+                const icon = isHighVolume ? "🚨" : "⚠️";
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedCluster(issue)}
+                    className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-900/80 transition-all cursor-pointer group flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                          <span>{icon}</span>
+                          <span>{issue.locality} — {issue.department}</span>
+                        </span>
+                        {issue.incident_id && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-semibold">
+                            {issue.incident_id}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Category: <span className="text-slate-200 font-medium">{issue.category}</span>
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-extrabold text-white text-base tracking-tight">
+                          {issue.complaints_count}
+                        </span>
+                        <span className="text-slate-400 ml-1">complaints</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-slate-300 font-medium">
+                          {issue.time_span_hours !== undefined ? `${issue.time_span_hours}h period` : `${issue.time_span_days}d period`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-blue-400 group-hover:text-blue-300 font-medium pt-1">
+                      <span>{issue.duplicate_count} duplicates</span>
+                      <span className="flex items-center gap-1">
+                        Inspect Cluster <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              No active emerging clusters detected matching current sensitivity thresholds.
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Priority Queue Section (Section 13) */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
@@ -297,6 +408,153 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Cluster Detail Modal (Section 9) */}
+      {selectedCluster && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-3xl rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden my-8">
+            <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900/80">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-red-950 text-red-400 border border-red-800/60">
+                  <Flame className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-white">
+                      {selectedCluster.locality} — {selectedCluster.department}
+                    </h2>
+                    {selectedCluster.incident_id && (
+                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-semibold">
+                        {selectedCluster.incident_id}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Category: <span className="text-slate-200 font-medium">{selectedCluster.category}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedCluster(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Cluster stats cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase">Complaints</span>
+                  <p className="text-xl font-bold text-white mt-0.5">{selectedCluster.complaints_count}</p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase">Duplicates</span>
+                  <p className="text-xl font-bold text-amber-400 mt-0.5">{selectedCluster.duplicate_count}</p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase">Time Window</span>
+                  <p className="text-xl font-bold text-blue-400 mt-0.5">
+                    {selectedCluster.time_span_hours !== undefined ? `${selectedCluster.time_span_hours}h` : `${selectedCluster.time_span_days}d`}
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase">Repeat Reports</span>
+                  <p className="text-xl font-bold text-orange-400 mt-0.5">{selectedCluster.repeat_count}</p>
+                </div>
+              </div>
+
+              {/* Factual cluster summary */}
+              <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300">
+                <span className="text-slate-500 font-semibold uppercase text-[10px] block mb-1">Factual Cluster Summary</span>
+                {selectedCluster.summary}
+              </div>
+
+              {/* Related complaints list */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  Associated Grievance Tickets ({selectedCluster.related_complaints?.length || 0})
+                </h3>
+
+                <div className="rounded-xl border border-slate-800 overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-[10px]">
+                      <tr>
+                        <th className="px-3.5 py-2.5">Ticket ID</th>
+                        <th className="px-3.5 py-2.5">Channel</th>
+                        <th className="px-3.5 py-2.5">Urgency</th>
+                        <th className="px-3.5 py-2.5">Status</th>
+                        <th className="px-3.5 py-2.5">Verbatim Snippet</th>
+                        <th className="px-3.5 py-2.5 text-right">Inspect</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800 bg-slate-950/40">
+                      {selectedCluster.related_complaints && selectedCluster.related_complaints.length > 0 ? (
+                        selectedCluster.related_complaints.map((item) => (
+                          <tr key={item.complaint_id} className="hover:bg-slate-800/50 transition-colors">
+                            <td className="px-3.5 py-2.5 font-mono font-bold text-blue-400 whitespace-nowrap">
+                              {item.complaint_id}
+                            </td>
+                            <td className="px-3.5 py-2.5 text-slate-300 whitespace-nowrap">{item.source_channel}</td>
+                            <td className="px-3.5 py-2.5 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                item.urgency === "CRITICAL"
+                                  ? "bg-red-950 text-red-400 border border-red-800/80"
+                                  : item.urgency === "HIGH"
+                                  ? "bg-orange-950 text-orange-400 border border-orange-800/80"
+                                  : "bg-amber-950 text-amber-400 border border-amber-800/80"
+                              }`}>
+                                {item.urgency}
+                              </span>
+                            </td>
+                            <td className="px-3.5 py-2.5 text-slate-300 whitespace-nowrap">{item.status}</td>
+                            <td className="px-3.5 py-2.5 text-slate-400 max-w-xs truncate">{item.raw_text_snippet}</td>
+                            <td className="px-3.5 py-2.5 text-right whitespace-nowrap">
+                              <Link
+                                href={`/complaints/${item.complaint_id}`}
+                                className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 font-semibold text-[11px]"
+                              >
+                                <span>Open</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </Link>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
+                            No related ticket records linked.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+                <Link
+                  href={`/complaints?department=${encodeURIComponent(selectedCluster.department)}&locality=${encodeURIComponent(selectedCluster.locality)}`}
+                  className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+                >
+                  View Sector in Queue
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCluster(null)}
+                  className="px-4 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

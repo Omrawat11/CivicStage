@@ -18,6 +18,64 @@ class GeminiProvider(LLMProvider):
         self.model = model or os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
         self.allow_mock_fallback = allow_mock_fallback
 
+    @property
+    def supports_multimodal(self) -> bool:
+        """Gemini 2.0 Flash natively supports multimodal vision inputs."""
+        return True
+
+    async def analyze_image_complaint(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        caption: str | None = None,
+    ) -> str:
+        """Analyze civic complaint photo and optional caption using Gemini vision.
+
+        Returns a rich textual complaint statement for the standard triage pipeline.
+        """
+        if not self.api_key:
+            # Deterministic mock visual analysis for offline / test environments
+            caption_text = caption.strip() if caption else ""
+            lower_cap = caption_text.lower()
+            if "pothole" in lower_cap or "road" in lower_cap:
+                return (
+                    f"Visual Evidence: Photo shows a severe deep pothole and broken asphalt hazard on the road. "
+                    f"Citizen caption: '{caption_text or 'Road near Kolar has a dangerous pothole'}'."
+                )
+            elif "garbage" in lower_cap or "kachra" in lower_cap or "waste" in lower_cap:
+                return (
+                    f"Visual Evidence: Photo shows an overflowing municipal garbage dump with uncollected waste scattered on the street. "
+                    f"Citizen caption: '{caption_text or 'Garbage not cleared for days'}'."
+                )
+            elif "water" in lower_cap or "leak" in lower_cap or "pipe" in lower_cap:
+                return (
+                    f"Visual Evidence: Photo shows high-pressure water leaking from a broken municipal pipeline onto the road. "
+                    f"Citizen caption: '{caption_text or 'Water pipeline burst and flooding the lane'}'."
+                )
+            else:
+                return (
+                    f"Visual Evidence: Municipal civic issue identified from citizen photograph showing damaged infrastructure. "
+                    f"Citizen caption: '{caption_text or 'Civic grievance reported with photo'}'."
+                )
+
+        client = genai.Client(api_key=self.api_key)
+        image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+        prompt = (
+            "Analyze this civic complaint photograph submitted by a citizen in Bhopal, India. "
+            f"Citizen Caption: '{caption or 'None provided'}'.\n\n"
+            "Provide a concise, factual 2-3 sentence civic complaint statement identifying:\n"
+            "1. The specific municipal infrastructure problem observed (e.g., road pothole, leaking water pipeline, overflowing garbage, broken street light, blocked drain).\n"
+            "2. Visual severity and hazard level.\n"
+            "3. Any visible locality or landmark cues.\n"
+            "Output only the clean factual complaint text for triage routing."
+        )
+
+        response = await client.aio.models.generate_content(
+            model=self.model,
+            contents=[prompt, image_part],
+        )
+        return response.text.strip() if response.text else f"Civic issue reported with photo. Caption: {caption or ''}"
+
     async def classify_complaint(
         self,
         complaint: str,

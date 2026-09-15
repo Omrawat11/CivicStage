@@ -77,12 +77,14 @@ def get_emerging_issues(
     start_date: str | None = Query(None, description="ISO format start date filter"),
     end_date: str | None = Query(None, description="ISO format end date filter"),
     min_cluster_size: int = Query(2, ge=2, description="Minimum complaints to qualify as a cluster"),
+    max_hours: float | None = Query(None, ge=0.1, description="Optional maximum time span in hours"),
     db: Session = Depends(get_db),
 ) -> list[dict[str, Any]]:
-    """Return detected emerging grievance clusters and hotspot localities."""
+    """Return detected emerging grievance clusters, complaint counts, and related complaints."""
     return detect_emerging_issues(
         db=db,
         start_date=start_date,
         end_date=end_date,
         min_cluster_size=min_cluster_size,
+        max_time_span_hours=max_hours,
     )

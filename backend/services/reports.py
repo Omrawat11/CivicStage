@@ -156,6 +156,7 @@ def detect_emerging_issues(
     start_date: datetime | str | None = None,
     end_date: datetime | str | None = None,
     min_cluster_size: int = 2,
+    max_time_span_hours: float | None = None,
 ) -> list[dict[str, Any]]:
     """Detect meaningful emerging grievance clusters using locality and incident data.
 
@@ -182,10 +183,19 @@ def detect_emerging_issues(
         if len(items) >= min_cluster_size:
             timestamps = [c.timestamp for c in items if c.timestamp]
             time_span_days = 0.0
+            time_span_hours = 0.0
+            first_seen_str: str | None = None
+            last_seen_str: str | None = None
             if timestamps:
                 min_t = min(timestamps)
                 max_t = max(timestamps)
-                time_span_days = round((max_t - min_t).total_seconds() / 86400.0, 1)
+                first_seen_str = min_t.isoformat()
+                last_seen_str = max_t.isoformat()
+                time_span_hours = round((max_t - min_t).total_seconds() / 3600.0, 1)
+                time_span_days = round(time_span_hours / 24.0, 1)
+
+            if max_time_span_hours is not None and time_span_hours > max_time_span_hours:
+                continue
 
             dup_count = sum(1 for c in items if c.duplicate_status == "duplicate")
             rep_count = sum(1 for c in items if c.duplicate_status == "repeat")
@@ -193,6 +203,26 @@ def detect_emerging_issues(
             # Extract matched incident ID if available
             matched_incidents = list({c.matched_incident_id for c in items if c.matched_incident_id})
             primary_incident = matched_incidents[0] if matched_incidents else None
+
+            # Sort items newest first
+            sorted_items = sorted(
+                items,
+                key=lambda x: x.timestamp or datetime.min,
+                reverse=True,
+            )
+
+            complaint_ids = [c.complaint_id for c in sorted_items]
+            related_complaints = [
+                {
+                    "complaint_id": c.complaint_id,
+                    "source_channel": c.source_channel,
+                    "urgency": c.operator_urgency or c.ai_urgency or "MEDIUM",
+                    "status": c.status,
+                    "timestamp": c.timestamp.isoformat() if c.timestamp else None,
+                    "raw_text_snippet": (c.raw_text[:110] + "...") if len(c.raw_text) > 110 else c.raw_text,
+                }
+                for c in sorted_items
+            ]
 
             emerging.append({
                 "locality": loc,
@@ -202,9 +232,14 @@ def detect_emerging_issues(
                 "complaints_count": len(items),
                 "duplicate_count": dup_count,
                 "repeat_count": rep_count,
+                "time_span_hours": time_span_hours,
                 "time_span_days": time_span_days,
+                "first_seen": first_seen_str,
+                "last_seen": last_seen_str,
+                "complaint_ids": complaint_ids,
+                "related_complaints": related_complaints,
                 "summary": (
-                    f"{len(items)} complaints recorded over {time_span_days} days in {loc} "
+                    f"{len(items)} complaints recorded over {time_span_hours} hours in {loc} "
                     f"regarding {cat} ({dup_count} duplicate reports)."
                 ),
             })

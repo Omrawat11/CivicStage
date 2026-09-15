@@ -196,6 +196,15 @@ export interface DepartmentMetric {
   top_locality: string | null;
 }
 
+export interface EmergingIssueRelatedComplaint {
+  complaint_id: string;
+  source_channel: string;
+  urgency: string;
+  status: string;
+  timestamp: string | null;
+  raw_text_snippet: string;
+}
+
 export interface EmergingIssue {
   locality: string;
   department: string;
@@ -204,7 +213,12 @@ export interface EmergingIssue {
   complaints_count: number;
   duplicate_count: number;
   repeat_count: number;
+  time_span_hours?: number;
   time_span_days: number;
+  first_seen?: string | null;
+  last_seen?: string | null;
+  complaint_ids?: string[];
+  related_complaints?: EmergingIssueRelatedComplaint[];
   summary: string;
 }
 
@@ -298,6 +312,92 @@ export async function triggerEvaluationRun(): Promise<EvaluationMetricResponse> 
   });
   if (!res.ok) {
     throw new Error(`Failed to run evaluation benchmark: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+// --- Phase 5 Multimodal Intake API Interfaces & Functions ---
+
+export interface AudioIntakeResponse {
+  transcript: string;
+  language: string;
+  confidence: number;
+  duration_seconds: number | null;
+  filename: string;
+}
+
+export interface ImageIntakeResponse {
+  extracted_complaint: string;
+  caption: string | null;
+  filename: string;
+  provider: string;
+}
+
+export async function transcribeAudio(
+  audioBase64: string,
+  filename: string = "recording.wav"
+): Promise<AudioIntakeResponse> {
+  const res = await fetch(`${API_BASE_URL}/complaints/intake/audio`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ audio_base64: audioBase64, filename }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Audio transcription failed: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function analyzeImageComplaint(
+  imageBase64: string,
+  filename: string = "photo.jpg",
+  caption?: string
+): Promise<ImageIntakeResponse> {
+  const res = await fetch(`${API_BASE_URL}/complaints/intake/image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image_base64: imageBase64, filename, caption }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Image analysis failed: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function createComplaintIntake(payload: {
+  raw_text: string;
+  source_channel?: string;
+  language?: string;
+  run_triage?: boolean;
+}): Promise<ComplaintDetail> {
+  const res = await fetch(`${API_BASE_URL}/complaints/intake`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Complaint intake failed: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function fetchEmergingIssues(
+  minClusterSize: number = 2,
+  maxHours?: number
+): Promise<EmergingIssue[]> {
+  const query = new URLSearchParams();
+  query.append("min_cluster_size", String(minClusterSize));
+  if (maxHours !== undefined) {
+    query.append("max_hours", String(maxHours));
+  }
+  const res = await fetch(`${API_BASE_URL}/reports/emerging-issues?${query.toString()}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch emerging issues: ${res.statusText}`);
   }
   return res.json();
 }

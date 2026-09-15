@@ -1,5 +1,4 @@
-"""FastAPI API endpoints for municipal complaints, triage execution, and human operator review."""
-
+import base64
 import json
 from datetime import datetime
 from typing import Any, Literal
@@ -12,12 +11,14 @@ from backend.db.database import get_db
 from backend.db.models import Complaint
 from backend.services.triage import TriageService
 from backend.services.acknowledgement import generate_acknowledgement_draft
+from backend.services.speech_to_text import SpeechToTextService
 from backend.data.loader import load_taxonomy, load_gazetteer
 
 router = APIRouter(tags=["Complaints"])
 
 # Shared singleton triage service (reuses existing Phase 2 pipeline)
 _triage_service: TriageService | None = None
+_stt_service: SpeechToTextService | None = None
 
 
 def get_triage_service() -> TriageService:
@@ -25,6 +26,13 @@ def get_triage_service() -> TriageService:
     if _triage_service is None:
         _triage_service = TriageService()
     return _triage_service
+
+
+def get_stt_service() -> SpeechToTextService:
+    global _stt_service
+    if _stt_service is None:
+        _stt_service = SpeechToTextService()
+    return _stt_service
 
 
 # --- Pydantic Schemas for Requests & Responses ---
@@ -46,6 +54,27 @@ class ReviewRequest(BaseModel):
 class AcknowledgementUpdateRequest(BaseModel):
     """Payload to update an acknowledgement draft text."""
     acknowledgement_draft: str = Field(..., description="Edited citizen acknowledgement draft text")
+
+
+class AudioIntakeRequest(BaseModel):
+    """Payload for audio intake containing base64 audio and filename."""
+    audio_base64: str = Field(..., description="Base64-encoded audio bytes (or data URL)")
+    filename: str = Field(default="recording.wav", description="Audio filename with extension for format detection")
+
+
+class ImageIntakeRequest(BaseModel):
+    """Payload for image intake containing base64 photo and optional caption."""
+    image_base64: str = Field(..., description="Base64-encoded image bytes (or data URL)")
+    filename: str = Field(default="photo.jpg", description="Image filename with extension")
+    caption: str | None = Field(default=None, description="Optional citizen caption or notes")
+
+
+class ComplaintIntakeRequest(BaseModel):
+    """Payload for submitting a new civic grievance (text, voice transcript, or image description)."""
+    raw_text: str = Field(..., min_length=5, description="Verbatim complaint text")
+    source_channel: str = Field(default="Web Portal", description="Channel of receipt (e.g. 'Helpline 181', 'Voice Intake', 'Citizen Photo')")
+    language: str = Field(default="Hinglish", description="Language of original communication")
+    run_triage: bool = Field(default=True, description="Whether to execute full AI triage pipeline immediately")
 
 
 def format_complaint_detail(c: Complaint) -> dict[str, Any]:
@@ -200,6 +229,7 @@ def get_complaint_stats(db: Session = Depends(get_db)):
 @router.get("/complaints")
 def list_complaints(
     department: str | None = Query(None, description="Filter by department"),
+    category: str | None = Query(None, description="Filter by category"),
     urgency: str | None = Query(None, description="Filter by urgency ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')"),
     status: str | None = Query(None, description="Filter by status ('New', 'Pending Review', 'Approved', etc.)"),
     language: str | None = Query(None, description="Filter by language"),
@@ -220,6 +250,15 @@ def list_complaints(
             or_(
                 Complaint.operator_department.ilike(f"%{department}%"),
                 Complaint.ai_department.ilike(f"%{department}%"),
+            )
+        )
+
+    # Category filter (matches either operator or AI category)
+    if category:
+        query = query.filter(
+            or_(
+                Complaint.operator_category.ilike(f"%{category}%"),
+                Complaint.ai_category.ilike(f"%{category}%"),
             )
         )
 
@@ -454,3 +493,193 @@ def update_acknowledgement_draft(
     db.commit()
     db.refresh(c)
     return {"complaint_id": c.complaint_id, "acknowledgement_draft": c.acknowledgement_draft}
+
+
+def _decode_base64_payload(data_str: str) -> bytes:
+    """Decode base64 string, handling optional data URI prefixes."""
+    if "," in data_str and "base64" in data_str:
+        data_str = data_str.split(",", 1)[1]
+    return base64.b64decode(data_str)
+
+
+# --- Multimodal & Complaint Intake Endpoints ---
+
+@router.post("/complaints/intake/audio")
+async def intake_audio_transcription(
+    payload: AudioIntakeRequest,
+    stt_service: SpeechToTextService = Depends(get_stt_service),
+):
+    """Transcribe citizen voice recording into verbatim text.
+
+    Accepts base64-encoded audio. Supports common audio formats (.wav, .mp3, .ogg, .m4a, .webm, .aac).
+    The resulting transcript is returned for operator inspection and editing
+    before submitting into the AI triage pipeline.
+    """
+    try:
+        content = _decode_base64_payload(payload.audio_base64)
+        if len(content) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded audio file is empty.",
+            )
+
+        res = await stt_service.transcribe_audio(
+            audio_bytes=content,
+            filename=payload.filename,
+        )
+        return {
+            "transcript": res["transcript"],
+            "language": res.get("language", "Hinglish"),
+            "confidence": res.get("confidence", 0.95),
+            "duration_seconds": res.get("duration_seconds"),
+            "filename": payload.filename,
+        }
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Audio transcription failed: {str(e)}",
+        )
+
+
+@router.post("/complaints/intake/image")
+async def intake_image_analysis(
+    payload: ImageIntakeRequest,
+    triage_svc: TriageService = Depends(get_triage_service),
+):
+    """Analyze a citizen complaint photo and optional caption.
+
+    Accepts base64-encoded image. Extracts a factual civic complaint representation
+    describing the observed infrastructure damage, hazard severity, and locality cues.
+    Returns the common complaint representation for operator inspection before triage.
+    """
+    allowed_extensions = {"jpg", "jpeg", "png", "webp"}
+    filename = payload.filename or "image.jpg"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+    if ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported image format '.{ext}'. Supported formats: {', '.join(sorted(allowed_extensions))}",
+        )
+
+    try:
+        content = _decode_base64_payload(payload.image_base64)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid base64 image data.",
+        )
+
+    if len(content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded image file is empty.",
+        )
+
+    mime_types = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "webp": "image/webp",
+    }
+    mime_type = mime_types.get(ext, "image/jpeg")
+
+    try:
+        extracted_text = await triage_svc.provider.analyze_image_complaint(
+            image_bytes=content,
+            mime_type=mime_type,
+            caption=payload.caption,
+        )
+        return {
+            "extracted_complaint": extracted_text,
+            "caption": payload.caption,
+            "filename": filename,
+            "provider": triage_svc.provider.__class__.__name__,
+        }
+    except NotImplementedError as nie:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(nie),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Image complaint analysis failed: {str(e)}",
+        )
+
+
+@router.post("/complaints/intake")
+async def create_complaint_intake(
+    payload: ComplaintIntakeRequest,
+    db: Session = Depends(get_db),
+    triage_svc: TriageService = Depends(get_triage_service),
+):
+    """Create a new complaint ticket from text, transcribed audio, or image description.
+
+    Optionally runs the AI triage pipeline immediately, populating AI routing,
+    urgency, duplicate detection, and citizen acknowledgement draft.
+    """
+    now = datetime.utcnow()
+
+    # Generate sequential unique complaint ID
+    total_existing = db.query(func.count(Complaint.id)).scalar() or 0
+    candidate_id = f"CMP-{total_existing + 1:04d}"
+    # Ensure collision-free ID
+    while db.query(Complaint).filter(Complaint.complaint_id == candidate_id).first():
+        total_existing += 1
+        candidate_id = f"CMP-{total_existing + 1:04d}"
+
+    complaint = Complaint(
+        complaint_id=candidate_id,
+        source_channel=payload.source_channel,
+        timestamp=now,
+        raw_text=payload.raw_text.strip(),
+        language=payload.language,
+        status="New",
+        created_at=now,
+        updated_at=now,
+    )
+
+    if payload.run_triage:
+        result = await triage_svc.triage_complaint(
+            complaint=payload.raw_text.strip(),
+            timestamp=now,
+        )
+
+        complaint.ai_department = result.final_department
+        complaint.ai_category = result.final_category
+        complaint.ai_locality = result.final_locality
+        complaint.ai_ward = result.final_ward
+        complaint.ai_urgency = result.urgency.level
+        complaint.ai_urgency_score = result.urgency.score
+        complaint.ai_urgency_factors = json.dumps(result.urgency.factors)
+        complaint.ai_confidence = result.triage.confidence
+        complaint.ai_evidence = json.dumps(result.triage.evidence)
+        complaint.ai_summary = result.triage.summary
+
+        complaint.duplicate_status = result.duplicate_analysis.status
+        complaint.matched_incident_id = result.duplicate_analysis.matched_incident_id
+        complaint.similarity_score = result.duplicate_analysis.similarity_score
+        complaint.cluster_complaints_count = result.duplicate_analysis.existing_complaints_count
+        complaint.duplicate_summary = result.duplicate_analysis.summary
+
+        complaint.status = "Pending Review"
+
+        complaint.acknowledgement_draft = generate_acknowledgement_draft(
+            complaint_id=complaint.complaint_id,
+            department=complaint.ai_department,
+            category=complaint.ai_category,
+            locality=complaint.ai_locality,
+            ward=complaint.ai_ward,
+        )
+
+    db.add(complaint)
+    db.commit()
+    db.refresh(complaint)
+
+    return format_complaint_detail(complaint)

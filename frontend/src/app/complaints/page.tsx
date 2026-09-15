@@ -13,21 +13,30 @@ import {
   AlertCircle,
   Copy,
   SlidersHorizontal,
+  PlusCircle,
+  RotateCcw,
 } from "lucide-react";
 import { fetchComplaints, fetchTaxonomy, ComplaintDetail, TaxonomyResponse } from "@/lib/api";
+import IntakeModal from "@/components/IntakeModal";
 
 function ComplaintQueueContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Filter state initialized from URL search params
+  // Filter state initialized from URL search params (8 core filters)
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [department, setDepartment] = useState(searchParams.get("department") || "");
+  const [category, setCategory] = useState(searchParams.get("category") || "");
   const [urgency, setUrgency] = useState(searchParams.get("urgency") || "");
   const [status, setStatus] = useState(searchParams.get("status") || "");
   const [locality, setLocality] = useState(searchParams.get("locality") || "");
+  const [language, setLanguage] = useState(searchParams.get("language") || "");
+  const [sourceChannel, setSourceChannel] = useState(searchParams.get("source_channel") || "");
   const [duplicateStatus, setDuplicateStatus] = useState(searchParams.get("duplicate_status") || "");
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+
+  // Intake Modal state
+  const [isIntakeOpen, setIsIntakeOpen] = useState(false);
 
   const [complaints, setComplaints] = useState<ComplaintDetail[]>([]);
   const [total, setTotal] = useState(0);
@@ -50,9 +59,12 @@ function ComplaintQueueContent() {
       const res = await fetchComplaints({
         search,
         department,
+        category,
         urgency,
         status,
         locality,
+        language,
+        source_channel: sourceChannel,
         duplicate_status: duplicateStatus,
         page,
         page_size: 20,
@@ -66,7 +78,7 @@ function ComplaintQueueContent() {
     } finally {
       setLoading(false);
     }
-  }, [search, department, urgency, status, locality, duplicateStatus, page]);
+  }, [search, department, category, urgency, status, locality, language, sourceChannel, duplicateStatus, page]);
 
   useEffect(() => {
     loadData();
@@ -81,12 +93,20 @@ function ComplaintQueueContent() {
   const handleReset = () => {
     setSearch("");
     setDepartment("");
+    setCategory("");
     setUrgency("");
     setStatus("");
     setLocality("");
+    setLanguage("");
+    setSourceChannel("");
     setDuplicateStatus("");
     setPage(1);
   };
+
+  // Derive categories available for selected department
+  const availableCategories = department
+    ? taxonomy?.departments.find((d) => d.name === department)?.categories || []
+    : Array.from(new Set(taxonomy?.departments.flatMap((d) => d.categories) || [])).sort();
 
   return (
     <div className="space-y-6">
@@ -101,6 +121,13 @@ function ComplaintQueueContent() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsIntakeOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-sm shadow-blue-500/20 transition-colors"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            + New Intake (Text / Audio / Image)
+          </button>
           <span className="text-xs text-slate-400 font-mono bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
             {loading ? "..." : `${total.toLocaleString()} complaints`}
           </span>
@@ -115,14 +142,14 @@ function ComplaintQueueContent() {
         </div>
       </div>
 
-      {/* Filter Toolbar (Section 14) */}
+      {/* Filter Toolbar (8 Filters: Dept, Cat, Urg, Stat, Lang, Loc, Source, Dup) */}
       <form
         onSubmit={handleFilterSubmit}
         className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-sm"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* Search Input */}
-          <div className="lg:col-span-2 relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* 1. Search Input */}
+          <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400 pointer-events-none" />
             <input
               type="text"
@@ -133,12 +160,13 @@ function ComplaintQueueContent() {
             />
           </div>
 
-          {/* Department Filter */}
+          {/* 2. Department Filter */}
           <div>
             <select
               value={department}
               onChange={(e) => {
                 setDepartment(e.target.value);
+                setCategory("");
                 setPage(1);
               }}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
@@ -152,7 +180,26 @@ function ComplaintQueueContent() {
             </select>
           </div>
 
-          {/* Urgency Filter */}
+          {/* 3. Category Filter */}
+          <div>
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+            >
+              <option value="">All Categories</option>
+              {availableCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Urgency Filter */}
           <div>
             <select
               value={urgency}
@@ -170,7 +217,7 @@ function ComplaintQueueContent() {
             </select>
           </div>
 
-          {/* Status Filter */}
+          {/* 5. Status Filter */}
           <div>
             <select
               value={status}
@@ -189,35 +236,15 @@ function ComplaintQueueContent() {
             </select>
           </div>
 
-          {/* Duplicate Status Filter */}
+          {/* 6. Locality Filter */}
           <div>
-            <select
-              value={duplicateStatus}
-              onChange={(e) => {
-                setDuplicateStatus(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">All Duplicates</option>
-              <option value="unique">Unique Only</option>
-              <option value="duplicate">Potential Duplicate</option>
-              <option value="repeat">Repeat Issue</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Filter Controls Row */}
-        <div className="flex items-center justify-between pt-1 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400">Locality:</span>
             <select
               value={locality}
               onChange={(e) => {
                 setLocality(e.target.value);
                 setPage(1);
               }}
-              className="px-2.5 py-1 bg-slate-950 border border-slate-700 rounded text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
             >
               <option value="">All Localities</option>
               {taxonomy?.localities.map((loc) => (
@@ -228,17 +255,76 @@ function ComplaintQueueContent() {
             </select>
           </div>
 
+          {/* 7. Language Filter */}
+          <div>
+            <select
+              value={language}
+              onChange={(e) => {
+                setLanguage(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+            >
+              <option value="">All Languages</option>
+              <option value="Hinglish">Hinglish</option>
+              <option value="Hindi">Hindi</option>
+              <option value="English">English</option>
+            </select>
+          </div>
+
+          {/* 8. Source Channel Filter */}
+          <div>
+            <select
+              value={sourceChannel}
+              onChange={(e) => {
+                setSourceChannel(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+            >
+              <option value="">All Source Channels</option>
+              <option value="Helpline 181">Helpline 181</option>
+              <option value="Web Portal">Web Portal</option>
+              <option value="Voice Recording">Voice Recording</option>
+              <option value="Citizen Photo">Citizen Photo</option>
+              <option value="WhatsApp Bot">WhatsApp Bot</option>
+              <option value="Walk-in Kiosk">Walk-in Kiosk</option>
+              <option value="Mobile App">Mobile App</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Bottom Filter Controls: Duplicate Status & Action Buttons */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400 font-medium">Duplicate Status:</span>
+            <select
+              value={duplicateStatus}
+              onChange={(e) => {
+                setDuplicateStatus(e.target.value);
+                setPage(1);
+              }}
+              className="px-2.5 py-1 bg-slate-950 border border-slate-700 rounded text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="unique">Unique Only</option>
+              <option value="duplicate">Potential Duplicate</option>
+              <option value="repeat">Repeat Issue</option>
+            </select>
+          </div>
+
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleReset}
-              className="px-3 py-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-medium"
             >
+              <RotateCcw className="w-3.5 h-3.5" />
               Reset Filters
             </button>
             <button
               type="submit"
-              className="px-3.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded transition-colors"
+              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-semibold"
             >
               Apply Filter
             </button>
@@ -400,8 +486,24 @@ function ComplaintQueueContent() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
-                    No complaints match the specified filter criteria.
+                  <td colSpan={10} className="px-4 py-16 text-center text-slate-400">
+                    <div className="max-w-sm mx-auto space-y-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-500">
+                        <Filter className="w-5 h-5" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-300">No complaints match the specified criteria</p>
+                      <p className="text-xs text-slate-500">
+                        Try clearing or relaxing some of your filter parameters to view tickets.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleReset}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Clear All Filters
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -436,6 +538,13 @@ function ComplaintQueueContent() {
           </div>
         </div>
       </div>
+
+      {/* Multimodal Intake Modal */}
+      <IntakeModal
+        isOpen={isIntakeOpen}
+        onClose={() => setIsIntakeOpen(false)}
+        onSuccess={() => loadData()}
+      />
     </div>
   );
 }
