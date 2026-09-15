@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-09-15T09:49:35.989872",
+  "timestamp": "2026-09-15T10:13:18.715236",
   "provider": "gemini",
   "model": "gemini-2.0-flash",
   "test_dataset_size": 100,
-  "duration_seconds": 0.15,
+  "duration_seconds": 0.25,
   "metrics": {
     "department_accuracy": 21.0,
     "category_accuracy": 9.0,
