@@ -181,3 +181,124 @@ export async function fetchTaxonomy(): Promise<TaxonomyResponse> {
   }
   return res.json();
 }
+
+// --- Phase 4 Reports & Evaluation Types & Functions ---
+
+export interface DepartmentMetric {
+  department: string;
+  complaints_received: number;
+  complaints_resolved: number;
+  complaints_pending: number;
+  resolution_rate: number;
+  median_resolution_time_hours: number | null;
+  repeat_complaints: number;
+  duplicate_complaints: number;
+  top_locality: string | null;
+}
+
+export interface EmergingIssue {
+  locality: string;
+  department: string;
+  category: string;
+  incident_id: string | null;
+  complaints_count: number;
+  duplicate_count: number;
+  repeat_count: number;
+  time_span_days: number;
+  summary: string;
+}
+
+export interface WeeklyReportResponse {
+  reporting_period: {
+    start_date: string | null;
+    end_date: string | null;
+  };
+  total_complaints: number;
+  total_resolved: number;
+  total_pending: number;
+  overall_resolution_rate: number;
+  overall_median_resolution_time_hours: number | null;
+  departments: DepartmentMetric[];
+  emerging_issues: EmergingIssue[];
+  narrative_summary: string;
+}
+
+export interface EvaluationMetricResponse {
+  timestamp: string;
+  provider: string;
+  model: string;
+  test_dataset_size: number;
+  department_accuracy: number;
+  category_accuracy: number;
+  locality_accuracy: number;
+  urgency_agreement: number;
+  duplicate_precision: number;
+  duplicate_recall: number;
+  duplicate_f1: number;
+  duplicate_detection: {
+    precision: number;
+    recall: number;
+    f1: number;
+    true_positives: number;
+    false_positives: number;
+    false_negatives: number;
+    true_negatives: number;
+    definition: string;
+  };
+  human_correction_rate: number;
+  human_in_the_loop: {
+    total_reviewed: number;
+    corrections_count: number;
+    human_correction_rate: number;
+    definition: string;
+  };
+  per_department_metrics: Record<string, { total: number; correct: number; accuracy: number }>;
+}
+
+export async function fetchWeeklyReport(params?: { start_date?: string; end_date?: string }): Promise<WeeklyReportResponse> {
+  const query = new URLSearchParams();
+  if (params?.start_date) query.append("start_date", params.start_date);
+  if (params?.end_date) query.append("end_date", params.end_date);
+
+  const res = await fetch(`${API_BASE_URL}/reports/weekly?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch weekly report: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function fetchSingleDepartmentReport(
+  department: string,
+  params?: { start_date?: string; end_date?: string }
+): Promise<DepartmentMetric> {
+  const query = new URLSearchParams();
+  if (params?.start_date) query.append("start_date", params.start_date);
+  if (params?.end_date) query.append("end_date", params.end_date);
+
+  const res = await fetch(`${API_BASE_URL}/reports/departments/${encodeURIComponent(department)}?${query.toString()}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch report for department ${department}: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function fetchEvaluationMetrics(): Promise<EvaluationMetricResponse> {
+  const res = await fetch(`${API_BASE_URL}/evaluation`, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch evaluation metrics: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function triggerEvaluationRun(): Promise<EvaluationMetricResponse> {
+  const res = await fetch(`${API_BASE_URL}/evaluation/run`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to run evaluation benchmark: ${res.statusText}`);
+  }
+  return res.json();
+}
+

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, LayoutDashboard, ListFilter, ShieldCheck } from "lucide-react";
+import { Building2, LayoutDashboard, ListFilter, ShieldCheck, BarChart3, Award } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -21,10 +21,10 @@ export default function Navbar() {
                 <div className="flex items-center space-x-2">
                   <span className="font-bold tracking-tight text-white text-lg">CivicTriage</span>
                   <span className="px-1.5 py-0.5 text-[10px] uppercase font-semibold tracking-wider bg-blue-900/80 text-blue-300 border border-blue-700/50 rounded">
-                    Phase 3
+                    Phase 4
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 font-medium">Bhopal Municipal Corporation • Operator Console</p>
+                <p className="text-xs text-slate-400 font-medium">Bhopal Municipal Corporation • Operations & Reports</p>
               </div>
             </Link>
           </div>
@@ -33,7 +33,7 @@ export default function Navbar() {
           <nav className="flex items-center space-x-1 sm:space-x-2">
             <Link
               href="/"
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                 pathname === "/"
                   ? "bg-slate-800 text-white shadow-inner"
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60"
@@ -45,14 +45,38 @@ export default function Navbar() {
 
             <Link
               href="/complaints"
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                 pathname.startsWith("/complaints")
                   ? "bg-slate-800 text-white shadow-inner"
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60"
               }`}
             >
               <ListFilter className="w-4 h-4" />
-              <span>Complaint Queue</span>
+              <span>Queue</span>
+            </Link>
+
+            <Link
+              href="/reports"
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                pathname.startsWith("/reports")
+                  ? "bg-slate-800 text-white shadow-inner"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Reports</span>
+            </Link>
+
+            <Link
+              href="/evaluation"
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                pathname.startsWith("/evaluation")
+                  ? "bg-slate-800 text-white shadow-inner"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Award className="w-4 h-4" />
+              <span>Evaluation</span>
             </Link>
           </nav>
 

@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-09-15T09:49:35.989872",
+  "provider": "gemini",
+  "model": "gemini-2.0-flash",
+  "test_dataset_size": 100,
+  "duration_seconds": 0.15,
+  "metrics": {
+    "department_accuracy": 21.0,
+    "category_accuracy": 9.0,
+    "locality_accuracy": 4.0,
+    "urgency_agreement": 42.0,
+    "duplicate_detection": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 25,
+      "true_negatives": 75,
+      "definition": "True Positive: predicted duplicate when incident cluster matches an earlier test record. Precision = TP / (TP + FP). Recall = TP / (TP + FN)."
+    }
+  },
+  "per_department_metrics": {
+    "Electricity": {
+      "total": 9,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "Roads": {
+      "total": 15,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "Sanitation": {
+      "total": 24,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "Water Supply": {
+      "total": 21,
+      "correct": 21,
+      "accuracy": 100.0
+    },
+    "Drainage": {
+      "total": 15,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "Public Health": {
+      "total": 9,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "Street Lighting": {
+      "total": 7,
+      "correct": 0,
+      "accuracy": 0.0
+    }
+  },
+  "human_in_the_loop": {
+    "total_reviewed": 185,
+    "corrections_count": 74,
+    "human_correction_rate": 40.0,
+    "definition": "Proportion of human-reviewed complaints where the operator modified or rejected the AI triage."
+  }
+}

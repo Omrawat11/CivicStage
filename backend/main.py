@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.db.database import init_db
 from backend.api.health import router as health_router
 from backend.api.complaints import router as complaints_router
+from backend.api.reports import router as reports_router
+from backend.api.evaluation import router as evaluation_router
 
 
 @asynccontextmanager
@@ -23,8 +25,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="CivicTriage Operator API",
-    description="Municipal Complaint Triage, Urgency Scoring, and Human-in-the-Loop Operator System",
-    version="3.0.0",
+    description="Municipal Complaint Triage, Urgency Scoring, Reports, and Evaluation System",
+    version="4.0.0",
     lifespan=lifespan,
 )
 
@@ -40,6 +42,8 @@ app.add_middleware(
 # Register API routers
 app.include_router(health_router)
 app.include_router(complaints_router)
+app.include_router(reports_router)
+app.include_router(evaluation_router)
 
 
 @app.get("/")
