@@ -1,0 +1,71 @@
+{
+  "_disclaimer": "Synthetic demo taxonomy for CivicTriage. Not official Bhopal municipal records. Can be replaced with partner-provided taxonomy.",
+  "departments": [
+    {
+      "name": "Water Supply",
+      "description": "Potable water supply, pipeline infrastructure, and water quality issues",
+      "categories": [
+        "Water outage",
+        "Low water pressure",
+        "Water leakage",
+        "Contaminated water"
+      ]
+    },
+    {
+      "name": "Sanitation",
+      "description": "Solid waste management, garbage collection, and street cleanliness",
+      "categories": [
+        "Garbage accumulation",
+        "Irregular garbage collection",
+        "Dead animal removal",
+        "Open dumping"
+      ]
+    },
+    {
+      "name": "Roads",
+      "description": "Road maintenance, pavement quality, and traffic obstructions",
+      "categories": [
+        "Pothole",
+        "Road damage",
+        "Road obstruction"
+      ]
+    },
+    {
+      "name": "Drainage",
+      "description": "Stormwater drains, sewage blockages, and manhole repairs",
+      "categories": [
+        "Drain blockage",
+        "Overflowing sewage",
+        "Damaged manhole cover"
+      ]
+    },
+    {
+      "name": "Street Lighting",
+      "description": "Public streetlights, poles, and lighting electrical fixtures",
+      "categories": [
+        "Streetlight not working",
+        "Flickering streetlight",
+        "Exposed wiring on pole"
+      ]
+    },
+    {
+      "name": "Electricity",
+      "description": "Grid power supply, neighborhood voltage fluctuations, and overhead wiring",
+      "categories": [
+        "Power outage",
+        "Low voltage",
+        "Loose overhead wires"
+      ]
+    },
+    {
+      "name": "Public Health",
+      "description": "Vector control, animal management, and public health sanitation concerns",
+      "categories": [
+        "Mosquito breeding / fogging request",
+        "Stray dog menace",
+        "Stagnant water near habitation",
+        "Public toilet sanitation"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "_disclaimer": "Synthetic demo categories metadata for CivicTriage development. Not official government standards.",
+  "categories": [
+    {
+      "name": "Water outage",
+      "department": "Water Supply",
+      "default_urgency": "High",
+      "description": "Complete cutoff or failure of municipal tap water supply"
+    },
+    {
+      "name": "Low water pressure",
+      "department": "Water Supply",
+      "default_urgency": "Medium",
+      "description": "Inadequate water flow preventing domestic storage"
+    },
+    {
+      "name": "Water leakage",
+      "department": "Water Supply",
+      "default_urgency": "Medium",
+      "description": "Main pipeline burst or distribution line leakage on public road"
+    },
+    {
+      "name": "Contaminated water",
+      "department": "Water Supply",
+      "default_urgency": "Critical",
+      "description": "Turbid, foul-smelling, or contaminated drinking water received from municipal line"
+    },
+    {
+      "name": "Garbage accumulation",
+      "department": "Sanitation",
+      "default_urgency": "Medium",
+      "description": "Trash piled up on roads, corners, or public spaces"
+    },
+    {
+      "name": "Irregular garbage collection",
+      "department": "Sanitation",
+      "default_urgency": "Low",
+      "description": "Municipal door-to-door waste collection vehicle skipping scheduled routes"
+    },
+    {
+      "name": "Dead animal removal",
+      "department": "Sanitation",
+      "default_urgency": "High",
+      "description": "Carcass of animal lying on public pathway creating biohazard"
+    },
+    {
+      "name": "Open dumping",
+      "department": "Sanitation",
+      "default_urgency": "Medium",
+      "description": "Unauthorized commercial or residential dumping on vacant plots"
+    },
+    {
+      "name": "Pothole",
+      "department": "Roads",
+      "default_urgency": "Medium",
+      "description": "Surface crater or pothole posing danger to vehicular movement"
+    },
+    {
+      "name": "Road damage",
+      "department": "Roads",
+      "default_urgency": "Medium",
+      "description": "Cracked, eroded, or broken asphalt on road stretch"
+    },
+    {
+      "name": "Road obstruction",
+      "department": "Roads",
+      "default_urgency": "High",
+      "description": "Fallen tree, construction debris, or barricade blocking traffic"
+    },
+    {
+      "name": "Drain blockage",
+      "department": "Drainage",
+      "default_urgency": "High",
+      "description": "Storm drain or nullah choked with plastic/silt causing local waterlogging"
+    },
+    {
+      "name": "Overflowing sewage",
+      "department": "Drainage",
+      "default_urgency": "High",
+      "description": "Sewage water spilling onto public streets or residential frontages"
+    },
+    {
+      "name": "Damaged manhole cover",
+      "department": "Drainage",
+      "default_urgency": "Critical",
+      "description": "Missing, broken, or dislocated sewer manhole lid creating fall hazard"
+    },
+    {
+      "name": "Streetlight not working",
+      "department": "Street Lighting",
+      "default_urgency": "Low",
+      "description": "Streetlight unlit during night hours causing dark spots"
+    },
+    {
+      "name": "Flickering streetlight",
+      "department": "Street Lighting",
+      "default_urgency": "Low",
+      "description": "Continuous blinking or intermittent functioning of light fixture"
+    },
+    {
+      "name": "Exposed wiring on pole",
+      "department": "Street Lighting",
+      "default_urgency": "Critical",
+      "description": "Naked electrical wires hanging from light pole accessible to pedestrians"
+    },
+    {
+      "name": "Power outage",
+      "department": "Electricity",
+      "default_urgency": "High",
+      "description": "Neighborhood electrical blackouts or feeder trip"
+    },
+    {
+      "name": "Low voltage",
+      "department": "Electricity",
+      "default_urgency": "Medium",
+      "description": "Abnormally low voltage preventing appliance operation"
+    },
+    {
+      "name": "Loose overhead wires",
+      "department": "Electricity",
+      "default_urgency": "Critical",
+      "description": "Sagging or broken high/low tension cables dangling low over street"
+    },
+    {
+      "name": "Mosquito breeding / fogging request",
+      "department": "Public Health",
+      "default_urgency": "Medium",
+      "description": "High mosquito density requesting vector control fogging"
+    },
+    {
+      "name": "Stray dog menace",
+      "department": "Public Health",
+      "default_urgency": "Medium",
+      "description": "Aggressive pack of stray dogs or dog bite incidents reported"
+    },
+    {
+      "name": "Stagnant water near habitation",
+      "department": "Public Health",
+      "default_urgency": "Medium",
+      "description": "Standing pool of dirty rainwater breeding pests near homes"
+    },
+    {
+      "name": "Public toilet sanitation",
+      "department": "Public Health",
+      "default_urgency": "Medium",
+      "description": "Unusable, foul-smelling municipal public convenience facility"
+    }
+  ]
+}

@@ -1,0 +1,205 @@
+{
+  "_disclaimer": "Synthetic demo locality and ward gazetteer for CivicTriage. Ward mappings and aliases are for development and testing only and do not represent official municipal records.",
+  "localities": [
+    {
+      "name": "Kolar",
+      "ward": "80",
+      "aliases": ["Kolar Road", "Kolar side", "Kolar area", "कोलार", "कोलार रोड", "Kolar nagar"]
+    },
+    {
+      "name": "MP Nagar",
+      "ward": "47",
+      "aliases": ["M.P. Nagar", "MP Nagar Zone 1", "MP Nagar Zone 2", "एमपी नगर", "Maharana Pratap Nagar", "MP nagar market"]
+    },
+    {
+      "name": "Arera Colony",
+      "ward": "48",
+      "aliases": ["Arera", "E-1 Arera Colony", "E-2 Arera", "E-3 Arera", "अरेरा कॉलोनी", "Arera colony area"]
+    },
+    {
+      "name": "Bittan Market",
+      "ward": "46",
+      "aliases": ["Bittan", "Bittan market ground", "बिट्टन मार्केट", "E-5 Bittan"]
+    },
+    {
+      "name": "Shahpura",
+      "ward": "50",
+      "aliases": ["Shahpura Lake area", "Shahpura sector A", "शाहपुरा", "Shahpura B sector"]
+    },
+    {
+      "name": "Bairagarh",
+      "ward": "3",
+      "aliases": ["Sant Hirdaram Nagar", "Bairagarh main road", "बैरागढ़", "Sant Hirdaram nagar"]
+    },
+    {
+      "name": "Indrapuri",
+      "ward": "62",
+      "aliases": ["Indrapuri sector A", "Indrapuri sector C", "इंद्रपुरी", "Indrapuri BHEL"]
+    },
+    {
+      "name": "Ashoka Garden",
+      "ward": "38",
+      "aliases": ["Ashok Garden", "Ashoka garden 80 feet road", "अशोका गार्डन", "Ashoka garden thana"]
+    },
+    {
+      "name": "Karond",
+      "ward": "15",
+      "aliases": ["Karond Chouraha", "Karond square", "करोंद", "Karond mandi", "Karond bypass"]
+    },
+    {
+      "name": "Govindpura",
+      "ward": "58",
+      "aliases": ["Govindpura Industrial Area", "गोविंदपुरा", "Govindpura ITI"]
+    },
+    {
+      "name": "New Market",
+      "ward": "32",
+      "aliases": ["Top n Town New Market", "न्यू मार्केट", "New market square", "Malviya nagar new market"]
+    },
+    {
+      "name": "TT Nagar",
+      "ward": "33",
+      "aliases": ["T.T. Nagar", "Tatya Tope Nagar", "टीटी नगर", "North TT Nagar", "South TT Nagar"]
+    },
+    {
+      "name": "Jahangirabad",
+      "ward": "41",
+      "aliases": ["Jahangirabad police line", "जहांगीराबाद", "Jahangirabad chowki"]
+    },
+    {
+      "name": "Ayodhya Bypass",
+      "ward": "65",
+      "aliases": ["Ayodhya bypass road", "अयोध्या बायपास", "Ayodhya nagar bypass", "Ayodhya nagar"]
+    },
+    {
+      "name": "Hoshangabad Road",
+      "ward": "52",
+      "aliases": ["Narmadapuram Road", "Hoshangabad highway", "होशंगाबाद रोड", "Aashima mall area"]
+    },
+    {
+      "name": "Chuna Bhatti",
+      "ward": "82",
+      "aliases": ["Chunabhatti", "Chuna bhatti square", "चूना भट्टी", "Kolar road chunabhatti"]
+    },
+    {
+      "name": "Kotra Sultanabad",
+      "ward": "28",
+      "aliases": ["Kotra", "कोतरा सुल्तानाबाद", "Kotra area", "Kamla nagar kotra"]
+    },
+    {
+      "name": "Bawadiya Kalan",
+      "ward": "51",
+      "aliases": ["Bawadia Kalan", "Bawadiya kalan bridge", "बावड़िया कलां", "Bawadiya railway crossing"]
+    },
+    {
+      "name": "Bagsewaniya",
+      "ward": "54",
+      "aliases": ["Baghmugaliya", "Bagsewaniya thana", "बागसेवनिया", "Bagsewaniya market"]
+    },
+    {
+      "name": "Misrod",
+      "ward": "85",
+      "aliases": ["Misrod railway station", "मिसरोद", "Mandideep road misrod"]
+    },
+    {
+      "name": "Awadhpuri",
+      "ward": "64",
+      "aliases": ["Awadhpuri BHEL", "अवधपुरी", "Awadhpuri square"]
+    },
+    {
+      "name": "Kamla Nagar",
+      "ward": "29",
+      "aliases": ["Kamla nagar thana", "कमला नगर", "Kamla park area"]
+    },
+    {
+      "name": "Gulmohar",
+      "ward": "49",
+      "aliases": ["Gulmohar Colony", "E-8 Gulmohar", "गुलमोहर", "Gulmohar square"]
+    },
+    {
+      "name": "Saket Nagar",
+      "ward": "53",
+      "aliases": ["Saket nagar AIIMS", "साकेत नगर", "Saket nagar Habibganj"]
+    },
+    {
+      "name": "Barkheda",
+      "ward": "59",
+      "aliases": ["Barkheda Pathani", "Barkheda BHEL", "बरखेड़ा", "Barkheda market"]
+    },
+    {
+      "name": "Panchsheel Nagar",
+      "ward": "30",
+      "aliases": ["Panchsheel", "पंचशील नगर", "Panchsheel colony"]
+    },
+    {
+      "name": "Shyamla Hills",
+      "ward": "24",
+      "aliases": ["Shyamla", "श्यामला हिल्स", "Bharat Bhavan area"]
+    },
+    {
+      "name": "Idgah Hills",
+      "ward": "9",
+      "aliases": ["Idgah", "ईदगाह हिल्स", "Cancer hospital road"]
+    },
+    {
+      "name": "Gandhi Nagar",
+      "ward": "1",
+      "aliases": ["Gandhi nagar airport road", "गांधी नगर", "Airport road Gandhi nagar"]
+    },
+    {
+      "name": "Lalghati",
+      "ward": "6",
+      "aliases": ["Lalghati Chouraha", "लालघाटी", "Lalghati square", "VIP road lalghati"]
+    },
+    {
+      "name": "Koh-e-Fiza",
+      "ward": "8",
+      "aliases": ["Kohefiza", "कोहेफिजा", "Koh e fiza lake view", "Kohefiza hospital road"]
+    },
+    {
+      "name": "Bhadbhada",
+      "ward": "27",
+      "aliases": ["Bhadbhada road", "भदभदा", "Bhadbhada dam area"]
+    },
+    {
+      "name": "Neelbad",
+      "ward": "83",
+      "aliases": ["Neelbad chouraha", "नीलबड़", "Neelbad road", "Neelbad square"]
+    },
+    {
+      "name": "Ratibad",
+      "ward": "84",
+      "aliases": ["Ratibad main market", "रातीबड़", "Ratibad college road"]
+    },
+    {
+      "name": "Anand Nagar",
+      "ward": "63",
+      "aliases": ["Anand nagar BHEL", "आनंद नगर", "Raisen road Anand nagar"]
+    },
+    {
+      "name": "Piplani",
+      "ward": "60",
+      "aliases": ["Piplani petrol pump", "पिपलानी", "Piplani BHEL"]
+    },
+    {
+      "name": "Sonagiri",
+      "ward": "61",
+      "aliases": ["Sonagiri sector A", "सोनागिरी", "Sonagiri square"]
+    },
+    {
+      "name": "Bairasia Road",
+      "ward": "16",
+      "aliases": ["Berasia road", "बैरसिया रोड", "Karond berasia road"]
+    },
+    {
+      "name": "Subhash Nagar",
+      "ward": "39",
+      "aliases": ["Subhash nagar railway crossing", "सुभाष नगर", "Subhash nagar metro station"]
+    },
+    {
+      "name": "Nehru Nagar",
+      "ward": "26",
+      "aliases": ["Nehru nagar square", "नेहरू नगर", "Police line nehru nagar"]
+    }
+  ]
+}
