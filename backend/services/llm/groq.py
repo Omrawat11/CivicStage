@@ -31,6 +31,7 @@ class GroqProvider(LLMProvider):
         complaint: str,
         taxonomy: dict,
         gazetteer: dict,
+        allow_mock: bool | None = None,
     ) -> ComplaintTriage:
         """Classify a civic complaint using Groq LLM.
 
