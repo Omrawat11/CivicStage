@@ -138,4 +138,13 @@ class GeminiProvider(LLMProvider):
             return response.parsed
 
         # Fallback to parsing response text
-        return ComplaintTriage.model_validate_json(response.text)
+        raw_text = (response.text or "").strip()
+        if raw_text.startswith("```"):
+            lines = raw_text.splitlines()
+            if lines and lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            raw_text = "\n".join(lines).strip()
+
+        return ComplaintTriage.model_validate_json(raw_text)

@@ -78,40 +78,47 @@ class GeminiSpeechToTextProvider(SpeechToTextProvider):
             # Fall back to mock if no API key configured
             return await MockSpeechToTextProvider().transcribe(audio_bytes, filename)
 
-        from google import genai
-        from google.genai import types
+        try:
+            from google import genai
+            from google.genai import types
 
-        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "wav"
-        mime_types = {
-            "mp3": "audio/mp3",
-            "wav": "audio/wav",
-            "ogg": "audio/ogg",
-            "m4a": "audio/m4a",
-            "webm": "audio/webm",
-            "aac": "audio/aac",
-        }
-        mime_type = mime_types.get(ext, "audio/wav")
+            ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "wav"
+            mime_types = {
+                "mp3": "audio/mpeg",
+                "wav": "audio/wav",
+                "ogg": "audio/ogg",
+                "m4a": "audio/mp4",
+                "webm": "audio/webm",
+                "aac": "audio/aac",
+            }
+            mime_type = mime_types.get(ext, "audio/wav")
 
-        client = genai.Client(api_key=self.api_key)
-        audio_part = types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)
-        prompt = (
-            "Transcribe the following civic grievance audio verbatim. "
-            "Maintain the citizen's original spoken language (Hindi, Hinglish, or English). "
-            "Output ONLY the clean transcription text with no introductory or concluding remarks."
-        )
+            client = genai.Client(api_key=self.api_key)
+            audio_part = types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)
+            prompt = (
+                "Transcribe the following civic grievance audio verbatim. "
+                "Maintain the citizen's original spoken language (Hindi, Hinglish, or English). "
+                "Output ONLY the clean transcription text with no introductory or concluding remarks."
+            )
 
-        response = await client.aio.models.generate_content(
-            model=self.model,
-            contents=[prompt, audio_part],
-        )
+            response = await client.aio.models.generate_content(
+                model=self.model,
+                contents=[prompt, audio_part],
+            )
 
-        text = response.text.strip() if response.text else ""
-        return {
-            "transcript": text,
-            "language": "Hinglish",
-            "confidence": 0.95,
-            "duration_seconds": None,
-        }
+            text = response.text.strip() if response.text else ""
+            if not text:
+                return await MockSpeechToTextProvider().transcribe(audio_bytes, filename)
+
+            return {
+                "transcript": text,
+                "language": "Hinglish",
+                "confidence": 0.95,
+                "duration_seconds": None,
+            }
+        except Exception:
+            # Gracefully fall back to mock transcription if live Gemini call fails
+            return await MockSpeechToTextProvider().transcribe(audio_bytes, filename)
 
 
 class GroqSpeechToTextProvider(SpeechToTextProvider):
@@ -126,7 +133,7 @@ class GroqSpeechToTextProvider(SpeechToTextProvider):
             return await MockSpeechToTextProvider().transcribe(audio_bytes, filename)
 
         try:
-            import groq
+            import groq  # type: ignore[import-not-found, import-untyped]
             client = groq.AsyncGroq(api_key=self.api_key)
             transcription = await client.audio.transcriptions.create(
                 file=(filename, audio_bytes),
@@ -153,6 +160,15 @@ class SpeechToTextService:
     def __init__(self, provider: SpeechToTextProvider | None = None):
         if provider is not None:
             self.provider = provider
+            return
+
+        stt_env = os.getenv("STT_PROVIDER", "").strip().lower()
+        if stt_env == "gemini":
+            self.provider = GeminiSpeechToTextProvider()
+        elif stt_env == "groq":
+            self.provider = GroqSpeechToTextProvider()
+        elif stt_env == "mock":
+            self.provider = MockSpeechToTextProvider()
         elif os.getenv("GEMINI_API_KEY"):
             self.provider = GeminiSpeechToTextProvider()
         elif os.getenv("GROQ_API_KEY"):

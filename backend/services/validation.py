@@ -45,21 +45,24 @@ def validate_triage_output(
     # 3. Validate locality and ward against gazetteer
     gazetteer_localities = {l["name"]: l["ward"] for l in gazetteer.get("localities", [])}
 
-    if triage.locality is not None:
-        if triage.locality not in gazetteer_localities:
+    locality_val = triage.locality.strip() if triage.locality and triage.locality.strip() else None
+    ward_val = str(triage.ward).strip() if triage.ward is not None and str(triage.ward).strip() else None
+
+    if locality_val is not None:
+        if locality_val not in gazetteer_localities:
             errors.append(
                 f"Unrecognized canonical locality '{triage.locality}'. Must exist in gazetteer or be null."
             )
         else:
-            expected_ward = gazetteer_localities[triage.locality]
-            if triage.ward is not None and str(triage.ward).strip() != expected_ward:
+            expected_ward = gazetteer_localities[locality_val]
+            if ward_val is not None and ward_val != expected_ward:
                 errors.append(
                     f"Ward mismatch for locality '{triage.locality}': received '{triage.ward}', "
                     f"expected '{expected_ward}'."
                 )
     else:
         # If locality is null, ward must be null
-        if triage.ward is not None:
+        if ward_val is not None:
             errors.append(
                 f"Inconsistent ward '{triage.ward}' provided when locality is null."
             )

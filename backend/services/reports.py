@@ -13,7 +13,7 @@ Calculates deterministic, database-driven metrics:
 import statistics
 from datetime import datetime, timedelta
 from typing import Any
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import Session
 
 from backend.db.models import Complaint
@@ -54,7 +54,7 @@ def calculate_department_metrics(
     base_query = db.query(Complaint).filter(
         or_(
             Complaint.operator_department == department_name,
-            (Complaint.operator_department.is_(None) & (Complaint.ai_department == department_name)),
+            and_(Complaint.operator_department.is_(None), Complaint.ai_department == department_name),
         )
     )
     base_query = _filter_date_range(base_query, start_date, end_date)

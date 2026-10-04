@@ -24,8 +24,6 @@ from sqlalchemy.orm import Session
 
 from backend.db.models import Complaint
 from backend.services.triage import TriageService
-from backend.services.llm.factory import get_llm_provider
-from backend.services.duplicate import DuplicateService
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DEFAULT_TEST_CSV = ROOT_DIR / "data" / "test" / "complaints_test.csv"
@@ -181,7 +179,11 @@ async def evaluate_test_dataset(
         }
 
     provider_name = os.getenv("LLM_PROVIDER", "gemini")
-    model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    model_name = (
+        os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+        if provider_name.lower() == "groq"
+        else os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    )
 
     return {
         "timestamp": datetime.utcnow().isoformat(),
