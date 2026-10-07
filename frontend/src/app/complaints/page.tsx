@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -15,6 +15,9 @@ import {
   SlidersHorizontal,
   PlusCircle,
   RotateCcw,
+  Inbox,
+  ArrowUpRight,
+  Sparkles,
 } from "lucide-react";
 import { fetchComplaints, fetchTaxonomy, ComplaintDetail, TaxonomyResponse } from "@/lib/api";
 import IntakeModal from "@/components/IntakeModal";
@@ -108,33 +111,45 @@ function ComplaintQueueContent() {
     ? taxonomy?.departments.find((d) => d.name === department)?.categories || []
     : Array.from(new Set(taxonomy?.departments.flatMap((d) => d.categories) || [])).sort();
 
+  const selectStyles = "w-full px-3 py-2.5 rounded-xl text-xs text-slate-200 transition-all duration-200"
+    + " focus:outline-none focus:border-blue-500/60 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]";
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
             Civic Complaint Queue
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Search, filter, and inspect incoming municipal grievances across all wards and departments.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsIntakeOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-sm shadow-blue-500/20 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white rounded-xl shadow-lg transition-all duration-200 hover:shadow-blue-500/25 hover:scale-[1.02]"
+            style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              boxShadow: '0 4px 16px rgba(59,130,246,0.25)',
+            }}
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            + New Intake (Text / Audio / Image)
+            New Intake
           </button>
-          <span className="text-xs text-slate-400 font-mono bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
-            {loading ? "..." : `${total.toLocaleString()} complaints`}
+          <span className="text-xs text-slate-500 font-mono px-3 py-2 rounded-xl border border-[var(--border-subtle)]"
+            style={{ background: 'rgba(5,10,20,0.5)' }}>
+            {loading ? "..." : `${total.toLocaleString()} total`}
           </span>
           <button
             onClick={() => loadData()}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-slate-400 rounded-xl transition-all duration-200 hover:text-white"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+              border: '1px solid var(--border-subtle)',
+            }}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-400" : ""}`} />
             Refresh
@@ -142,171 +157,138 @@ function ComplaintQueueContent() {
         </div>
       </div>
 
-      {/* Filter Toolbar (8 Filters: Dept, Cat, Urg, Stat, Lang, Loc, Source, Dup) */}
+      {/* Filter Toolbar */}
       <form
         onSubmit={handleFilterSubmit}
-        className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-sm"
+        className="glass-panel rounded-2xl p-5 space-y-4"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* 1. Search Input */}
+          {/* Search Input */}
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400 pointer-events-none" />
+            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-500 pointer-events-none" />
             <input
               type="text"
               placeholder="Search text or CMP-ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className={`w-full pl-10 pr-3 py-2.5 rounded-xl text-xs text-slate-200 placeholder-slate-600 transition-all duration-200`}
+              style={{
+                background: 'rgba(5,10,20,0.6)',
+                border: '1px solid var(--border-subtle)',
+              }}
             />
           </div>
 
-          {/* 2. Department Filter */}
-          <div>
-            <select
-              value={department}
-              onChange={(e) => {
-                setDepartment(e.target.value);
-                setCategory("");
-                setPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">All Departments</option>
-              {taxonomy?.departments.map((d) => (
-                <option key={d.name} value={d.name}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Department Filter */}
+          <select
+            value={department}
+            onChange={(e) => { setDepartment(e.target.value); setCategory(""); setPage(1); }}
+            className={selectStyles}
+            style={{ background: 'rgba(5,10,20,0.6)', border: '1px solid var(--border-subtle)' }}
+          >
+            <option value="">All Departments</option>
+            {taxonomy?.departments.map((d) => (
+              <option key={d.name} value={d.name}>{d.name}</option>
+            ))}
+          </select>
 
-          {/* 3. Category Filter */}
-          <div>
-            <select
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">All Categories</option>
-              {availableCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Category Filter */}
+          <select
+            value={category}
+            onChange={(e) => { setCategory(e.target.value); setPage(1); }}
+            className={selectStyles}
+            style={{ background: 'rgba(5,10,20,0.6)', border: '1px solid var(--border-subtle)' }}
+          >
+            <option value="">All Categories</option>
+            {availableCategories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
 
-          {/* 4. Urgency Filter */}
-          <div>
-            <select
-              value={urgency}
-              onChange={(e) => {
-                setUrgency(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">All Urgencies</option>
-              <option value="CRITICAL">CRITICAL</option>
-              <option value="HIGH">HIGH</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="LOW">LOW</option>
-            </select>
-          </div>
+          {/* Urgency Filter */}
+          <select
+            value={urgency}
+            onChange={(e) => { setUrgency(e.target.value); setPage(1); }}
+            className={selectStyles}
+            style={{ background: 'rgba(5,10,20,0.6)', border: '1px solid var(--border-subtle)' }}
+          >
+            <option value="">All Urgencies</option>
+            <option value="CRITICAL">CRITICAL</option>
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="LOW">LOW</option>
+          </select>
 
-          {/* 5. Status Filter */}
-          <div>
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">All Statuses</option>
-              <option value="New">New</option>
-              <option value="Pending Review">Pending Review</option>
-              <option value="Approved">Approved</option>
-              <option value="Edited">Edited</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-          </div>
+          {/* Status Filter */}
+          <select
+            value={status}
+            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+            className={selectStyles}
+            style={{ background: 'rgba(5,10,20,0.6)', border: '1px solid var(--border-subtle)' }}
+          >
+            <option value="">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Pending Review">Pending Review</option>
+            <option value="Approved">Approved</option>
+            <option value="Edited">Edited</option>
+            <option value="Rejected">Rejected</option>
+          </select>
 
-          {/* 6. Locality Filter */}
-          <div>
-            <select
-              value={locality}
-              onChange={(e) => {
-                setLocality(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">All Localities</option>
-              {taxonomy?.localities.map((loc) => (
-                <option key={loc} value={loc}>
-                  {loc}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Locality Filter */}
+          <select
+            value={locality}
+            onChange={(e) => { setLocality(e.target.value); setPage(1); }}
+            className={selectStyles}
+            style={{ background: 'rgba(5,10,20,0.6)', border: '1px solid var(--border-subtle)' }}
+          >
+            <option value="">All Localities</option>
+            {taxonomy?.localities.map((loc) => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
 
-          {/* 7. Language Filter */}
-          <div>
-            <select
-              value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">All Languages</option>
-              <option value="Hinglish">Hinglish</option>
-              <option value="Hindi">Hindi</option>
-              <option value="English">English</option>
-            </select>
-          </div>
+          {/* Language Filter */}
+          <select
+            value={language}
+            onChange={(e) => { setLanguage(e.target.value); setPage(1); }}
+            className={selectStyles}
+            style={{ background: 'rgba(5,10,20,0.6)', border: '1px solid var(--border-subtle)' }}
+          >
+            <option value="">All Languages</option>
+            <option value="Hinglish">Hinglish</option>
+            <option value="Hindi">Hindi</option>
+            <option value="English">English</option>
+          </select>
 
-          {/* 8. Source Channel Filter */}
-          <div>
-            <select
-              value={sourceChannel}
-              onChange={(e) => {
-                setSourceChannel(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">All Source Channels</option>
-              <option value="Helpline 181">Helpline 181</option>
-              <option value="Web Portal">Web Portal</option>
-              <option value="Voice Recording">Voice Recording</option>
-              <option value="Citizen Photo">Citizen Photo</option>
-              <option value="WhatsApp Bot">WhatsApp Bot</option>
-              <option value="Walk-in Kiosk">Walk-in Kiosk</option>
-              <option value="Mobile App">Mobile App</option>
-            </select>
-          </div>
+          {/* Source Channel Filter */}
+          <select
+            value={sourceChannel}
+            onChange={(e) => { setSourceChannel(e.target.value); setPage(1); }}
+            className={selectStyles}
+            style={{ background: 'rgba(5,10,20,0.6)', border: '1px solid var(--border-subtle)' }}
+          >
+            <option value="">All Channels</option>
+            <option value="Helpline 181">Helpline 181</option>
+            <option value="Web Portal">Web Portal</option>
+            <option value="Voice Recording">Voice Recording</option>
+            <option value="Citizen Photo">Citizen Photo</option>
+            <option value="WhatsApp Bot">WhatsApp Bot</option>
+            <option value="Walk-in Kiosk">Walk-in Kiosk</option>
+            <option value="Mobile App">Mobile App</option>
+          </select>
         </div>
 
-        {/* Bottom Filter Controls: Duplicate Status & Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80 text-xs">
+        {/* Bottom Filter Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--border-subtle)] text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-slate-400 font-medium">Duplicate Status:</span>
+            <span className="text-slate-500 font-medium">Duplicate:</span>
             <select
               value={duplicateStatus}
-              onChange={(e) => {
-                setDuplicateStatus(e.target.value);
-                setPage(1);
-              }}
-              className="px-2.5 py-1 bg-slate-950 border border-slate-700 rounded text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+              onChange={(e) => { setDuplicateStatus(e.target.value); setPage(1); }}
+              className="px-3 py-1.5 rounded-lg text-xs text-slate-200 transition-colors"
+              style={{ background: 'rgba(5,10,20,0.6)', border: '1px solid var(--border-subtle)' }}
             >
-              <option value="">All Statuses</option>
+              <option value="">All</option>
               <option value="unique">Unique Only</option>
               <option value="duplicate">Potential Duplicate</option>
               <option value="repeat">Repeat Issue</option>
@@ -317,50 +299,66 @@ function ComplaintQueueContent() {
             <button
               type="button"
               onClick={handleReset}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-medium"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-medium text-slate-400 hover:text-white transition-all"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+                border: '1px solid var(--border-subtle)',
+              }}
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Reset Filters
+              Reset
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-semibold"
+              className="px-5 py-2 rounded-xl font-semibold text-white transition-all hover:shadow-blue-500/20 hover:shadow-lg"
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              }}
             >
-              Apply Filter
+              Apply Filters
             </button>
           </div>
         </div>
       </form>
 
       {error && (
-        <div className="p-4 rounded-lg bg-red-950/50 border border-red-800 text-red-200 text-xs">
-          {error}
+        <div className="p-4 rounded-xl flex items-center gap-2 text-xs"
+          style={{
+            background: 'linear-gradient(135deg, rgba(220,38,38,0.08) 0%, rgba(220,38,38,0.04) 100%)',
+            border: '1px solid rgba(239,68,68,0.25)',
+          }}>
+          <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+          <span className="text-red-300">{error}</span>
         </div>
       )}
 
-      {/* Main Table (Section 14) */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      {/* Main Table */}
+      <div className="glass-panel rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-[11px] uppercase font-semibold text-slate-400 border-b border-slate-800">
+            <thead className="text-[11px] uppercase font-semibold text-slate-500 border-b border-[var(--border-subtle)]"
+              style={{ background: 'rgba(5,10,20,0.6)' }}>
               <tr>
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Citizen Grievance</th>
-                <th className="px-4 py-3">Department</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Urgency</th>
-                <th className="px-4 py-3">Locality</th>
-                <th className="px-4 py-3">Language</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Duplicate</th>
-                <th className="px-4 py-3 text-right">Action</th>
+                <th className="px-4 py-3.5">ID</th>
+                <th className="px-4 py-3.5">Citizen Grievance</th>
+                <th className="px-4 py-3.5">Department</th>
+                <th className="px-4 py-3.5">Category</th>
+                <th className="px-4 py-3.5">Urgency</th>
+                <th className="px-4 py-3.5">Locality</th>
+                <th className="px-4 py-3.5">Lang</th>
+                <th className="px-4 py-3.5">Status</th>
+                <th className="px-4 py-3.5">Duplicate</th>
+                <th className="px-4 py-3.5 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 font-medium text-slate-300">
+            <tbody className="divide-y divide-[var(--border-subtle)] font-medium text-slate-300">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
-                    Loading complaints queue...
+                  <td colSpan={10} className="px-4 py-16 text-center text-slate-500">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      Loading complaints queue...
+                    </div>
                   </td>
                 </tr>
               ) : complaints.length > 0 ? (
@@ -376,108 +374,89 @@ function ComplaintQueueContent() {
                   return (
                     <tr
                       key={c.complaint_id}
-                      className="hover:bg-slate-800/50 transition-colors group cursor-pointer"
+                      className="table-row-hover group cursor-pointer"
                       onClick={() => router.push(`/complaints/${c.complaint_id}`)}
                     >
-                      {/* ID */}
-                      <td className="px-4 py-3 whitespace-nowrap font-mono font-semibold text-blue-400 group-hover:text-blue-300">
+                      <td className="px-4 py-3.5 whitespace-nowrap font-mono font-bold text-blue-400 group-hover:text-blue-300">
                         {c.complaint_id}
                       </td>
-
-                      {/* Complaint raw snippet */}
-                      <td className="px-4 py-3 max-w-xs sm:max-w-sm lg:max-w-md truncate text-slate-200">
+                      <td className="px-4 py-3.5 max-w-xs sm:max-w-sm lg:max-w-md truncate text-slate-300">
                         {c.raw_text}
                       </td>
-
-                      {/* Department */}
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-300">
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-400">
                         {c.effective_department || (
                           <span className="text-slate-600 italic">Unassigned</span>
                         )}
                       </td>
-
-                      {/* Category */}
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-300">
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-400">
                         {c.effective_category || (
                           <span className="text-slate-600 italic">—</span>
                         )}
                       </td>
-
-                      {/* Urgency */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3.5 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                             isCritical
-                              ? "bg-red-950 text-red-400 border border-red-800"
+                              ? "badge-critical"
                               : isHigh
-                              ? "bg-orange-950 text-orange-400 border border-orange-800"
+                              ? "badge-high"
                               : isMedium
-                              ? "bg-amber-950 text-amber-400 border border-amber-800"
-                              : "bg-emerald-950 text-emerald-400 border border-emerald-800"
+                              ? "badge-medium"
+                              : "badge-low"
                           }`}
                         >
                           {urgencyLevel}
                         </span>
                       </td>
-
-                      {/* Locality & Ward */}
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-300">
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-400">
                         {c.effective_locality || "—"}
                         {c.effective_ward && (
-                          <span className="text-slate-500 text-[10px] ml-1 font-mono">
+                          <span className="text-slate-600 text-[10px] ml-1 font-mono">
                             (W-{c.effective_ward})
                           </span>
                         )}
                       </td>
-
-                      {/* Language */}
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-400 text-[11px]">
+                      <td className="px-4 py-3.5 whitespace-nowrap text-slate-500 text-[11px]">
                         {c.language}
                       </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3.5 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
                             c.status === "Approved"
-                              ? "bg-emerald-950 text-emerald-300 border border-emerald-800/80"
+                              ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
                               : c.status === "Edited"
-                              ? "bg-purple-950 text-purple-300 border border-purple-800/80"
+                              ? "text-purple-400 bg-purple-500/10 border border-purple-500/20"
                               : c.status === "Rejected"
-                              ? "bg-slate-800 text-slate-400 border border-slate-700"
+                              ? "text-slate-400 bg-slate-500/10 border border-slate-500/20"
                               : c.status === "Pending Review"
-                              ? "bg-blue-950 text-blue-300 border border-blue-800/80"
-                              : "bg-slate-900 text-slate-300 border border-slate-700"
+                              ? "text-blue-400 bg-blue-500/10 border border-blue-500/20"
+                              : "text-slate-400 bg-white/[0.03] border border-[var(--border-subtle)]"
                           }`}
                         >
                           {c.status}
                         </span>
                       </td>
-
-                      {/* Duplicate */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3.5 whitespace-nowrap">
                         {isDuplicate ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-950/80 border border-amber-800/60 px-1.5 py-0.5 rounded">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 badge-medium px-2 py-0.5 rounded-md">
                             <Copy className="w-3 h-3" />
-                            Duplicate ({Math.round((c.duplicate_info.similarity_score || 0) * 100)}%)
+                            {Math.round((c.duplicate_info.similarity_score || 0) * 100)}%
                           </span>
                         ) : isRepeat ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-orange-400 bg-orange-950/80 border border-orange-800/60 px-1.5 py-0.5 rounded">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold badge-high px-2 py-0.5 rounded-md">
                             Repeat
                           </span>
                         ) : (
                           <span className="text-slate-600 text-[10px]">Unique</span>
                         )}
                       </td>
-
-                      {/* Action */}
-                      <td className="px-4 py-3 whitespace-nowrap text-right">
+                      <td className="px-4 py-3.5 whitespace-nowrap text-right">
                         <Link
                           href={`/complaints/${c.complaint_id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-950/60 rounded transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-400 hover:text-blue-300 hover:bg-blue-500/[0.08] transition-colors"
                         >
-                          <span>Review</span>
+                          Review
                           <ArrowRight className="w-3 h-3" />
                         </Link>
                       </td>
@@ -486,22 +465,29 @@ function ComplaintQueueContent() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={10} className="px-4 py-16 text-center text-slate-400">
-                    <div className="max-w-sm mx-auto space-y-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-500">
-                        <Filter className="w-5 h-5" />
+                  <td colSpan={10} className="px-4 py-20 text-center text-slate-400">
+                    <div className="max-w-sm mx-auto space-y-4">
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto text-slate-500" style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+                        border: '1px solid var(--border-subtle)',
+                      }}>
+                        <Inbox className="w-6 h-6" />
                       </div>
-                      <p className="text-sm font-semibold text-slate-300">No complaints match the specified criteria</p>
+                      <p className="text-sm font-semibold text-slate-300">No matching complaints</p>
                       <p className="text-xs text-slate-500">
-                        Try clearing or relaxing some of your filter parameters to view tickets.
+                        Try clearing or relaxing some filter parameters.
                       </p>
                       <button
                         type="button"
                         onClick={handleReset}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-200 rounded-xl transition-colors"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+                          border: '1px solid var(--border-subtle)',
+                        }}
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        Clear All Filters
+                        Clear Filters
                       </button>
                     </div>
                   </td>
@@ -512,27 +498,32 @@ function ComplaintQueueContent() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="px-4 py-3 bg-slate-950/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <div className="px-5 py-3.5 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-slate-500"
+          style={{ background: 'rgba(5,10,20,0.4)' }}>
           <div>
-            Showing <span className="font-semibold text-slate-200">{complaints.length}</span> of{" "}
-            <span className="font-semibold text-slate-200">{total}</span> complaints (Page {page} of{" "}
-            {totalPages})
+            Showing <span className="font-semibold text-slate-300">{complaints.length}</span> of{" "}
+            <span className="font-semibold text-slate-300">{total}</span> complaints
+            <span className="text-slate-600 ml-2">
+              Page {page}/{totalPages}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1 || loading}
-              className="flex items-center gap-1 px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:bg-white/[0.04]"
+              style={{ border: '1px solid var(--border-subtle)' }}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-              <span>Previous</span>
+              Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages || loading}
-              className="flex items-center gap-1 px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:bg-white/[0.04]"
+              style={{ border: '1px solid var(--border-subtle)' }}
             >
-              <span>Next</span>
+              Next
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
