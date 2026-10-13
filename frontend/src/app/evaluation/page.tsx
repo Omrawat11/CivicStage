@@ -13,6 +13,9 @@ import {
   Target,
   FileCode2,
   TrendingUp,
+  Cpu,
+  Layers,
+  Zap,
 } from "lucide-react";
 import {
   fetchEvaluationMetrics,
@@ -64,238 +67,272 @@ function EvaluationContent() {
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <Award className="w-6 h-6 text-amber-400" />
-            Model Benchmark & Offline Evaluation
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full text-amber-300 bg-amber-500/15 border border-amber-500/25">
+              LLM Benchmark & Safety Evaluation
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
+            Model Evaluation & Triage Benchmark
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Held-out evaluation against <span className="font-mono text-slate-300">data/test/complaints_test.csv</span> with zero ground-truth leakage.
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            Held-out evaluation against <span className="font-mono text-slate-300">data/test/complaints_test.csv</span> with strict ground-truth isolation.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleReRun}
-            disabled={reRunning || loading}
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm shadow-blue-500/20 disabled:opacity-50 transition-colors"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${reRunning ? "animate-spin" : ""}`} />
-            <span>{reRunning ? "Evaluating Model..." : "Re-run Evaluation"}</span>
-          </button>
-        </div>
+
+        <button
+          onClick={handleReRun}
+          disabled={reRunning || loading}
+          className="btn-sheen flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-500/25 disabled:opacity-50 transition-all self-start sm:self-auto"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${reRunning ? "animate-spin" : ""}`} />
+          <span>{reRunning ? "Evaluating Model..." : "Re-run Evaluation"}</span>
+        </button>
       </div>
 
       {/* Benchmark Metadata Header Banner */}
-      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-4">
+      <div className="glass-panel rounded-2xl p-5 border border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-6">
           <div>
-            <span className="text-slate-500 block text-[10px] uppercase font-bold">LLM Model & Provider</span>
-            <span className="font-mono text-slate-200 font-semibold">
+            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">
+              LLM Model & Provider
+            </span>
+            <span className="font-mono text-white font-bold text-sm flex items-center gap-1.5 mt-0.5">
+              <Cpu className="w-3.5 h-3.5 text-blue-400" />
               {data?.model || "gemini-2.0-flash"} ({data?.provider || "gemini"})
             </span>
           </div>
 
-          <div className="border-l border-slate-800 pl-4">
-            <span className="text-slate-500 block text-[10px] uppercase font-bold">Held-out Test Dataset</span>
-            <span className="font-mono text-slate-200 font-semibold">
+          <div className="border-l border-white/[0.08] pl-6 hidden sm:block">
+            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">
+              Held-Out Testset Size
+            </span>
+            <span className="font-mono text-white font-bold text-sm mt-0.5 block">
               {data?.test_dataset_size || 100} complaints
             </span>
           </div>
 
           {data?.timestamp && (
-            <div className="border-l border-slate-800 pl-4">
-              <span className="text-slate-500 block text-[10px] uppercase font-bold">Last Evaluated</span>
-              <span className="text-slate-300">{new Date(data.timestamp).toLocaleString()}</span>
+            <div className="border-l border-white/[0.08] pl-6 hidden md:block">
+              <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">
+                Last Evaluated
+              </span>
+              <span className="text-slate-300 font-mono text-xs mt-0.5 block">
+                {new Date(data.timestamp).toLocaleString()}
+              </span>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-md">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Strict Input Isolation (No Ground-Truth Leak)</span>
+        <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1.5 rounded-xl font-semibold">
+          <ShieldCheck className="w-4 h-4" />
+          <span>Strict Input Isolation (0% Leakage)</span>
         </div>
       </div>
 
+      {/* Success Notification */}
       {successMsg && (
-        <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
+        <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-xs flex items-center gap-2.5 animate-float-up">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>{successMsg}</span>
+          <span className="font-medium">{successMsg}</span>
         </div>
       )}
 
+      {/* Error Notification */}
       {error && (
-        <div className="p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
-          <span>{error}</span>
+        <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-center gap-2.5 animate-float-up">
+          <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+          <span className="font-medium">{error}</span>
         </div>
       )}
 
-      {/* 4 Primary Accuracy Metric Cards (Section 14 & 19) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Department Accuracy */}
-        <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Department Accuracy</span>
-            <Target className="w-4 h-4 text-blue-400" />
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-extrabold text-white tracking-tight">
-              {loading ? "..." : `${data?.department_accuracy ?? 0}%`}
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">Predicted vs Ground-Truth Department</p>
-          </div>
-        </div>
+      {/* 4 Primary Accuracy Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {[
+          {
+            label: "Department Accuracy",
+            value: data?.department_accuracy,
+            sub: "Predicted vs Ground-Truth Department",
+            color: "text-blue-400",
+            bar: "bg-blue-500",
+            border: "border-blue-500/20",
+          },
+          {
+            label: "Category Accuracy",
+            value: data?.category_accuracy,
+            sub: "Exact taxonomy category match",
+            color: "text-purple-400",
+            bar: "bg-purple-500",
+            border: "border-purple-500/20",
+          },
+          {
+            label: "Locality Accuracy",
+            value: data?.locality_accuracy,
+            sub: "Canonical gazetteer normalization",
+            color: "text-emerald-400",
+            bar: "bg-emerald-500",
+            border: "border-emerald-500/20",
+          },
+          {
+            label: "Urgency Agreement",
+            value: data?.urgency_agreement,
+            sub: "4-factor score vs ground-truth level",
+            color: "text-amber-400",
+            bar: "bg-amber-500",
+            border: "border-amber-500/20",
+          },
+        ].map((card, idx) => (
+          <div
+            key={idx}
+            className={`glass-panel rounded-2xl p-5 card-hover animate-float-up border ${card.border} flex flex-col justify-between`}
+            style={{ animationDelay: `${idx * 60}ms` }}
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  {card.label}
+                </span>
+                <Target className="w-4 h-4 text-slate-400" />
+              </div>
 
-        {/* Category Accuracy */}
-        <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Category Accuracy</span>
-            <Target className="w-4 h-4 text-purple-400" />
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-extrabold text-white tracking-tight">
-              {loading ? "..." : `${data?.category_accuracy ?? 0}%`}
+              <div className="mt-3">
+                <div className={`text-3xl sm:text-4xl font-extrabold ${card.color} tracking-tight font-mono`}>
+                  {loading ? <div className="skeleton h-8 w-16 rounded-lg" /> : `${card.value ?? 0}%`}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1.5 font-medium">{card.sub}</p>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Exact taxonomy category match</p>
-          </div>
-        </div>
 
-        {/* Locality Accuracy */}
-        <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Locality Accuracy</span>
-            <Target className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-extrabold text-white tracking-tight">
-              {loading ? "..." : `${data?.locality_accuracy ?? 0}%`}
+            <div className="w-full bg-slate-800/60 h-1.5 rounded-full mt-4 overflow-hidden">
+              <div
+                className={`h-full ${card.bar} rounded-full transition-all duration-1000`}
+                style={{ width: `${card.value ?? 0}%` }}
+              />
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Canonical gazetteer normalization</p>
           </div>
-        </div>
-
-        {/* Urgency Agreement */}
-        <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Urgency Agreement</span>
-            <Target className="w-4 h-4 text-orange-400" />
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-extrabold text-white tracking-tight">
-              {loading ? "..." : `${data?.urgency_agreement ?? 0}%`}
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">Rule engine vs Ground-Truth level</p>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Middle Grid: Duplicate Performance & Human-in-the-Loop Audit */}
+      {/* Duplicate Detection & Human-in-the-Loop Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Duplicate Detection Performance (Section 15 & 19) */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
+        {/* Duplicate Detection Performance */}
+        <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-4">
+          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3.5">
+            <div className="flex items-center gap-2.5">
               <Copy className="w-5 h-5 text-amber-400" />
               <div>
-                <h2 className="text-sm font-bold text-white tracking-tight">Duplicate Detection Performance</h2>
-                <p className="text-xs text-slate-400">Precision, recall, and F1 on multi-complaint incident clusters.</p>
+                <h2 className="text-sm font-bold text-white tracking-tight">
+                  Duplicate Detection Performance
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Precision, recall, and F1 on multi-complaint incident clusters.
+                </p>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-white/[0.06]">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Precision</span>
-              <span className="text-xl font-extrabold text-amber-400 font-mono mt-1 block">
+              <span className="text-2xl font-black text-amber-400 font-mono mt-1 block">
                 {loading ? "..." : `${data?.duplicate_precision ?? 0}%`}
               </span>
-              <span className="text-[9px] text-slate-500">TP / (TP + FP)</span>
+              <span className="text-[10px] text-slate-500 font-mono">TP / (TP + FP)</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-white/[0.06]">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Recall</span>
-              <span className="text-xl font-extrabold text-amber-400 font-mono mt-1 block">
+              <span className="text-2xl font-black text-amber-400 font-mono mt-1 block">
                 {loading ? "..." : `${data?.duplicate_recall ?? 0}%`}
               </span>
-              <span className="text-[9px] text-slate-500">TP / (TP + FN)</span>
+              <span className="text-[10px] text-slate-500 font-mono">TP / (TP + FN)</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-white/[0.06]">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">F1 Score</span>
-              <span className="text-xl font-extrabold text-amber-400 font-mono mt-1 block">
+              <span className="text-2xl font-black text-amber-400 font-mono mt-1 block">
                 {loading ? "..." : `${data?.duplicate_f1 ?? 0}%`}
               </span>
-              <span className="text-[9px] text-slate-500">Harmonic Mean</span>
+              <span className="text-[10px] text-slate-500 font-mono">Harmonic Mean</span>
             </div>
           </div>
 
           {data?.duplicate_detection && (
-            <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 space-y-1 font-mono">
+            <div className="p-4 rounded-xl bg-slate-900/40 border border-white/[0.06] text-xs text-slate-300 space-y-1.5 font-mono">
               <div className="flex justify-between">
                 <span>True Positives (TP):</span>
-                <span className="text-slate-200 font-bold">{data.duplicate_detection.true_positives}</span>
+                <span className="text-emerald-400 font-bold">{data.duplicate_detection.true_positives}</span>
               </div>
               <div className="flex justify-between">
                 <span>False Positives (FP):</span>
-                <span className="text-slate-200 font-bold">{data.duplicate_detection.false_positives}</span>
+                <span className="text-rose-400 font-bold">{data.duplicate_detection.false_positives}</span>
               </div>
               <div className="flex justify-between">
                 <span>False Negatives (FN):</span>
-                <span className="text-slate-200 font-bold">{data.duplicate_detection.false_negatives}</span>
+                <span className="text-rose-400 font-bold">{data.duplicate_detection.false_negatives}</span>
               </div>
               <div className="flex justify-between">
                 <span>True Negatives (TN):</span>
-                <span className="text-slate-200 font-bold">{data.duplicate_detection.true_negatives}</span>
+                <span className="text-emerald-400 font-bold">{data.duplicate_detection.true_negatives}</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Human-in-the-Loop Audit Card (Section 17 & 19) */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
+        {/* Human-in-the-Loop Telemetry Card */}
+        <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-4">
+          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3.5">
+            <div className="flex items-center gap-2.5">
               <Users className="w-5 h-5 text-blue-400" />
               <div>
-                <h2 className="text-sm font-bold text-white tracking-tight">Human Correction Rate</h2>
-                <p className="text-xs text-slate-400">Live metric derived from real human operator reviews in SQLite.</p>
+                <h2 className="text-sm font-bold text-white tracking-tight">
+                  Human Correction Rate
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Live operational audit metric derived from human municipal reviews.
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-slate-950 border border-slate-800">
+          <div className="flex items-center justify-between p-5 rounded-2xl bg-slate-900/80 border border-white/[0.06]">
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Operator Correction Rate</span>
-              <div className="text-3xl font-extrabold text-blue-400 font-mono mt-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                Operator Correction Frequency
+              </span>
+              <div className="text-3xl sm:text-4xl font-black text-blue-400 font-mono mt-1">
                 {loading ? "..." : `${data?.human_correction_rate ?? 0}%`}
               </div>
             </div>
-            <div className="text-right text-xs text-slate-300 font-mono space-y-1">
+            <div className="text-right text-xs text-slate-300 font-mono space-y-1.5">
               <div>
-                Reviewed: <span className="font-bold text-white">{data?.human_in_the_loop?.total_reviewed ?? 0}</span>
+                Reviewed: <span className="font-bold text-white text-sm">{data?.human_in_the_loop?.total_reviewed ?? 0}</span>
               </div>
               <div>
-                Corrections: <span className="font-bold text-white">{data?.human_in_the_loop?.corrections_count ?? 0}</span>
+                Adjusted: <span className="font-bold text-blue-300 text-sm">{data?.human_in_the_loop?.corrections_count ?? 0}</span>
               </div>
             </div>
           </div>
 
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Calculated as the percentage of human-reviewed complaints where the operator modified the department, category, locality, ward, or urgency, or rejected the automated prediction.
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Quantifies the proportion of tickets where human municipal officers adjusted category, urgency, department, or rejected automated triage suggestions.
           </p>
         </div>
       </div>
 
-      {/* Accuracy by Department Table (Section 16 & 19) */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      {/* Accuracy by Department Breakdown Table */}
+      <div className="glass-panel rounded-2xl overflow-hidden border border-[var(--border-subtle)]">
+        <div className="p-5 sm:p-6 border-b border-[var(--border-subtle)] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <TrendingUp className="w-5 h-5 text-blue-400" />
             <div>
-              <h2 className="text-sm font-bold text-white tracking-tight">Accuracy by Department</h2>
-              <p className="text-xs text-slate-400">
-                Evaluation breakdown on held-out test data across municipal departments.
+              <h2 className="text-base font-bold text-white tracking-tight">
+                Benchmark Accuracy by Department
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Breakdown across municipal sectors on held-out test data.
               </p>
             </div>
           </div>
@@ -303,42 +340,42 @@ function EvaluationContent() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-[11px] uppercase font-semibold text-slate-400 border-b border-slate-800">
+            <thead className="bg-[#030712]/70 text-[11px] uppercase font-bold text-slate-400 border-b border-[var(--border-subtle)]">
               <tr>
-                <th className="px-5 py-3.5">Department</th>
-                <th className="px-5 py-3.5 text-right">Correct Predictions</th>
-                <th className="px-5 py-3.5 text-right">Test Complaints</th>
-                <th className="px-5 py-3.5">Accuracy</th>
+                <th className="px-5 py-4">Department</th>
+                <th className="px-5 py-4 text-right">Correct Predictions</th>
+                <th className="px-5 py-4 text-right">Test Ingested</th>
+                <th className="px-5 py-4">Accuracy Rate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 font-medium text-slate-300">
+            <tbody className="divide-y divide-[var(--border-subtle)] font-medium text-slate-300">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-5 py-12 text-center text-slate-500">
+                  <td colSpan={4} className="px-5 py-12 text-center text-slate-400">
                     Loading department evaluation metrics...
                   </td>
                 </tr>
               ) : data?.per_department_metrics && Object.keys(data.per_department_metrics).length > 0 ? (
                 Object.entries(data.per_department_metrics).map(([deptName, deptStats]) => (
-                  <tr key={deptName} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-5 py-3.5 font-bold text-white whitespace-nowrap">
+                  <tr key={deptName} className="table-row-hover">
+                    <td className="px-5 py-4 font-bold text-white whitespace-nowrap">
                       {deptName}
                     </td>
-                    <td className="px-5 py-3.5 text-right font-mono text-emerald-400 font-semibold">
+                    <td className="px-5 py-4 text-right font-mono text-emerald-400 font-bold">
                       {deptStats.correct}
                     </td>
-                    <td className="px-5 py-3.5 text-right font-mono text-slate-200">
+                    <td className="px-5 py-4 text-right font-mono text-slate-200">
                       {deptStats.total}
                     </td>
-                    <td className="px-5 py-3.5 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-28 h-2 rounded-full bg-slate-800 overflow-hidden">
                           <div
-                            className="h-full bg-blue-500 rounded-full"
+                            className="h-full bg-gradient-to-r from-blue-500 to-indigo-400 rounded-full"
                             style={{ width: `${Math.min(100, deptStats.accuracy)}%` }}
                           />
                         </div>
-                        <span className="font-mono text-[11px] font-semibold text-slate-200">
+                        <span className="font-mono text-xs font-bold text-white">
                           {deptStats.accuracy}%
                         </span>
                       </div>
@@ -347,7 +384,7 @@ function EvaluationContent() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-5 py-12 text-center text-slate-500">
+                  <td colSpan={4} className="px-5 py-12 text-center text-slate-400">
                     No per-department evaluation breakdown available.
                   </td>
                 </tr>

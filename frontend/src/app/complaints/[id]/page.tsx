@@ -22,6 +22,11 @@ import {
   FileCheck,
   MessageSquareQuote,
   Scale,
+  Check,
+  ChevronRight,
+  UserCheck,
+  Activity,
+  Layers,
 } from "lucide-react";
 import {
   fetchComplaintById,
@@ -60,9 +65,10 @@ export default function ComplaintDetailPage({
   const [editUrgency, setEditUrgency] = useState("");
   const [operatorNotes, setOperatorNotes] = useState("");
 
-  // Acknowledgement draft input
+  // Acknowledgement draft input & copy state
   const [ackDraft, setAckDraft] = useState("");
   const [draftSaving, setDraftSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchTaxonomy().then(setTaxonomy).catch(console.error);
@@ -76,7 +82,7 @@ export default function ComplaintDetailPage({
       setComplaint(data);
       setAckDraft(data.acknowledgement.acknowledgement_draft || "");
 
-      // Pre-fill operator edit fields from existing operator decision or AI recommendation
+      // Pre-fill operator edit fields
       const ai = data.ai_recommendation;
       const op = data.operator_info;
       setEditDept(op.operator_department || ai.department || "");
@@ -124,7 +130,7 @@ export default function ComplaintDetailPage({
       setComplaint(updated);
       setAckDraft(updated.acknowledgement.acknowledgement_draft || "");
       setReviewMode("view");
-      setSuccessMessage("AI recommendation approved and ticket marked as Approved.");
+      setSuccessMessage("AI recommendation approved and ticket officially marked as Approved.");
     } catch (err: unknown) {
       console.error(err);
       setError("Failed to submit approval.");
@@ -149,7 +155,7 @@ export default function ComplaintDetailPage({
       setComplaint(updated);
       setAckDraft(updated.acknowledgement.acknowledgement_draft || "");
       setReviewMode("view");
-      setSuccessMessage("Operator edits saved. AI prediction remains untouched.");
+      setSuccessMessage("Operator edits saved. AI prediction remains archived as reference.");
     } catch (err: unknown) {
       console.error(err);
       setError("Failed to save edited values.");
@@ -182,7 +188,7 @@ export default function ComplaintDetailPage({
     setDraftSaving(true);
     try {
       await updateAcknowledgementDraft(complaintId, ackDraft);
-      setSuccessMessage("Citizen acknowledgement draft updated.");
+      setSuccessMessage("Citizen acknowledgement draft updated successfully.");
     } catch (err: unknown) {
       console.error(err);
       setError("Failed to save acknowledgement draft text.");
@@ -191,7 +197,13 @@ export default function ComplaintDetailPage({
     }
   };
 
-  // Get categories available for currently selected edit department
+  const copyToClipboard = () => {
+    if (!ackDraft) return;
+    navigator.clipboard.writeText(ackDraft);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const selectedDeptObj = taxonomy?.departments.find((d) => d.name === editDept);
   const availableCategories = selectedDeptObj ? selectedDeptObj.categories : [];
 
@@ -199,17 +211,21 @@ export default function ComplaintDetailPage({
     return (
       <div className="py-24 text-center text-slate-400 flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm">Loading complaint details...</p>
+        <p className="text-sm font-semibold">Loading complaint triage console...</p>
       </div>
     );
   }
 
   if (!complaint) {
     return (
-      <div className="py-16 text-center text-slate-400">
-        <p className="text-sm text-red-400 font-medium">Complaint not found.</p>
-        <Link href="/complaints" className="mt-4 inline-block text-xs text-blue-400 hover:underline">
-          ← Back to complaints queue
+      <div className="py-16 text-center text-slate-400 space-y-4">
+        <p className="text-sm text-rose-400 font-semibold">Complaint record not found.</p>
+        <Link
+          href="/complaints"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to Triage Queue
         </Link>
       </div>
     );
@@ -222,42 +238,48 @@ export default function ComplaintDetailPage({
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Breadcrumb */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-800">
-        <div className="flex items-center gap-3">
+      {/* Top Header & Breadcrumb Ribbon */}
+      <div className="glass-panel rounded-2xl p-5 border border-[var(--border-subtle)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3.5">
           <Link
             href="/complaints"
-            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl bg-slate-900 border border-[var(--border-subtle)] text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            title="Back to queue"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
+
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-white font-mono">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="text-lg sm:text-xl font-black text-white font-mono tracking-tight">
                 {complaint.complaint_id}
-              </h1>
-              {/* Lifecycle Status Badge */}
+              </span>
+
+              {/* Status Badge */}
               <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold ${
                   complaint.status === "Approved"
-                    ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                    ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
                     : complaint.status === "Edited"
-                    ? "bg-purple-950 text-purple-300 border border-purple-800"
+                    ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
                     : complaint.status === "Rejected"
                     ? "bg-slate-800 text-slate-400 border border-slate-700"
                     : complaint.status === "Pending Review"
-                    ? "bg-blue-950 text-blue-300 border border-blue-800"
+                    ? "bg-blue-500/15 text-blue-300 border border-blue-500/30"
                     : "bg-slate-900 text-slate-300 border border-slate-700"
                 }`}
               >
+                <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                 {complaint.status}
               </span>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Source: <span className="text-slate-300 font-medium">{complaint.source_channel}</span> • Recorded:{" "}
-              <span className="text-slate-300 font-medium">
-                {complaint.timestamp ? new Date(complaint.timestamp).toLocaleString() : "N/A"}
+
+              <span className="text-xs text-slate-400 font-medium">
+                • Channel: <strong className="text-white">{complaint.source_channel}</strong>
               </span>
+            </div>
+
+            <p className="text-xs text-slate-500 mt-1 font-mono">
+              Recorded: {complaint.timestamp ? new Date(complaint.timestamp).toLocaleString() : "N/A"}
             </p>
           </div>
         </div>
@@ -268,35 +290,39 @@ export default function ComplaintDetailPage({
             <button
               onClick={handleTriage}
               disabled={actionLoading}
-              className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm shadow-blue-500/20 transition-colors"
+              className="btn-sheen flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all"
             >
-              <Zap className="w-3.5 h-3.5" />
-              <span>{actionLoading ? "Running Triage..." : "Run AI Triage"}</span>
+              <Zap className="w-4 h-4" />
+              <span>{actionLoading ? "Processing..." : "Run AI Triage"}</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Status Notifications */}
+      {/* Success Notification */}
       {successMessage && (
-        <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-xs flex items-center justify-between animate-float-up">
+          <div className="flex items-center gap-2.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <span>{successMessage}</span>
+            <span className="font-medium">{successMessage}</span>
           </div>
-          <button onClick={() => setSuccessMessage(null)} className="text-emerald-400 hover:text-emerald-200 text-xs font-bold">
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="text-emerald-400 hover:text-emerald-200 text-xs font-bold"
+          >
             ✕
           </button>
         </div>
       )}
 
+      {/* Error Notification */}
       {error && (
-        <div className="p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <span>{error}</span>
+        <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-center justify-between animate-float-up">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <span className="font-medium">{error}</span>
           </div>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-200 text-xs font-bold">
+          <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-200 text-xs font-bold">
             ✕
           </button>
         </div>
@@ -306,40 +332,41 @@ export default function ComplaintDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Complaint & AI Intelligence (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          {/* 1. Original Citizen Complaint (Section 15.1) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
+          {/* 1. Original Citizen Complaint */}
+          <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 <MessageSquareQuote className="w-4 h-4 text-blue-400" />
                 Original Citizen Grievance
               </span>
-              <span className="px-2 py-0.5 text-[11px] font-medium bg-slate-800 text-slate-300 rounded border border-slate-700">
-                Language: {complaint.language}
+              <span className="px-2.5 py-1 text-[11px] font-mono font-bold bg-slate-900 text-slate-300 rounded-md border border-white/[0.06]">
+                Lang: {complaint.language}
               </span>
             </div>
-            <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 text-sm leading-relaxed font-sans select-text">
+
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-white/[0.08] text-slate-100 text-sm leading-relaxed font-sans select-text shadow-inner">
               &ldquo;{complaint.raw_text}&rdquo;
             </div>
           </div>
 
-          {/* 2. AI Recommendation & Evidence (Section 15.2 & 15.3) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
+          {/* 2. AI Recommendation & Evidence */}
+          <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-blue-950 text-blue-400 border border-blue-800/60">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/25">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-white tracking-tight">AI Triage Recommendation</h2>
+                  <h2 className="text-sm font-bold text-white tracking-tight">AI Triage Classification</h2>
                   <p className="text-[11px] text-slate-400">
-                    Automated classification via CivicTriage intelligence engine.
+                    Extracted via Gemini 2.0 Flash intelligence pipeline.
                   </p>
                 </div>
               </div>
               {ai.confidence && (
                 <div className="text-right">
                   <span className="text-[10px] uppercase font-bold text-slate-400">Confidence</span>
-                  <div className="text-sm font-extrabold text-blue-400 font-mono">
+                  <div className="text-sm font-black text-blue-400 font-mono">
                     {Math.round(ai.confidence * 100)}%
                   </div>
                 </div>
@@ -349,43 +376,45 @@ export default function ComplaintDetailPage({
             {ai.department ? (
               <div className="space-y-4 pt-1">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] uppercase font-semibold text-slate-400">Department</span>
+                  <div className="p-3.5 rounded-xl bg-slate-900/80 border border-white/[0.06]">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Department</span>
                     <p className="text-xs font-bold text-white mt-1">{ai.department}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] uppercase font-semibold text-slate-400">Category</span>
+                  <div className="p-3.5 rounded-xl bg-slate-900/80 border border-white/[0.06]">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Category</span>
                     <p className="text-xs font-bold text-white mt-1">{ai.category}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] uppercase font-semibold text-slate-400">Locality</span>
+                  <div className="p-3.5 rounded-xl bg-slate-900/80 border border-white/[0.06]">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Locality</span>
                     <p className="text-xs font-bold text-white mt-1">{ai.locality || "—"}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] uppercase font-semibold text-slate-400">Ward</span>
+                  <div className="p-3.5 rounded-xl bg-slate-900/80 border border-white/[0.06]">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Ward</span>
                     <p className="text-xs font-bold text-white mt-1">{ai.ward || "—"}</p>
                   </div>
                 </div>
 
                 {/* AI Summary */}
                 {ai.summary && (
-                  <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-xs text-slate-300">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">AI Executive Summary</span>
+                  <div className="p-3.5 rounded-xl bg-slate-900/50 border border-white/[0.06] text-xs text-slate-300 leading-relaxed">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                      AI Executive Summary
+                    </span>
                     {ai.summary}
                   </div>
                 )}
 
-                {/* Evidence Phrases (Section 15.3) */}
+                {/* Extracted Evidence Phrases */}
                 <div>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-2">
-                    Extracted Quoted Evidence:
+                    Extracted Grounded Evidence:
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {ai.evidence && ai.evidence.length > 0 ? (
                       ai.evidence.map((phrase, idx) => (
                         <span
                           key={idx}
-                          className="px-2.5 py-1 text-xs font-mono bg-blue-950/70 text-blue-300 border border-blue-800/70 rounded-md"
+                          className="px-2.5 py-1 text-xs font-mono bg-blue-500/10 text-blue-300 border border-blue-500/25 rounded-lg"
                         >
                           &ldquo;{phrase}&rdquo;
                         </span>
@@ -397,74 +426,69 @@ export default function ComplaintDetailPage({
                 </div>
               </div>
             ) : (
-              <div className="p-6 text-center text-slate-500 text-xs">
-                Ticket is untriaged. Click &ldquo;Run AI Triage&rdquo; to analyze with the pipeline.
+              <div className="p-6 text-center text-slate-400 text-xs">
+                Ticket is untriaged. Click &ldquo;Run AI Triage&rdquo; to process.
               </div>
             )}
           </div>
 
-          {/* 3. Urgency Explanation & Factor Reasoning (Section 15.4) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
+          {/* 3. Urgency Reasoning & 4-Factor Breakdown */}
+          <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 <Flame className="w-4 h-4 text-orange-400" />
-                Urgency Reasoning & Factor-Level Breakdown
+                Urgency Reasoning & 4-Factor Hazard Matrix
               </span>
               <span
-                className={`px-2.5 py-0.5 rounded text-xs font-extrabold uppercase tracking-wide ${
+                className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-wider ${
                   ai.urgency === "CRITICAL"
-                    ? "bg-red-950 text-red-400 border border-red-800"
+                    ? "badge-critical"
                     : ai.urgency === "HIGH"
-                    ? "bg-orange-950 text-orange-400 border border-orange-800"
-                    : "bg-amber-950 text-amber-400 border border-amber-800"
+                    ? "badge-high"
+                    : "badge-medium"
                 }`}
               >
                 {ai.urgency || "MEDIUM"} — Score {ai.urgency_score ?? 6}/12
               </span>
             </div>
 
-            {/* Constituent Factor Scores Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
-              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400">Service Outage</span>
-                <span className="font-mono font-bold text-blue-400">
-                  +{ai.urgency_factors?.service_outage ?? 2}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400">Hazard Duration</span>
-                <span className="font-mono font-bold text-amber-400">
-                  +{ai.urgency_factors?.duration ?? 1}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400">Affected Scale</span>
-                <span className="font-mono font-bold text-purple-400">
-                  +{ai.urgency_factors?.scale ?? 2}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center">
-                <span className="text-slate-400">Public Safety</span>
-                <span className="font-mono font-bold text-red-400">
-                  +{ai.urgency_factors?.safety ?? 1}
-                </span>
-              </div>
+            {/* Factor Gauges */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              {[
+                { label: "Public Safety", val: ai.urgency_factors?.safety ?? 1, color: "text-rose-400", bar: "bg-rose-500" },
+                { label: "Service Outage", val: ai.urgency_factors?.service_outage ?? 2, color: "text-blue-400", bar: "bg-blue-500" },
+                { label: "Hazard Duration", val: ai.urgency_factors?.duration ?? 1, color: "text-amber-400", bar: "bg-amber-500" },
+                { label: "Affected Scale", val: ai.urgency_factors?.scale ?? 2, color: "text-purple-400", bar: "bg-purple-500" },
+              ].map((factor, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl bg-slate-900/70 border border-white/[0.06] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 text-[11px] font-semibold">{factor.label}</span>
+                    <span className={`font-mono font-bold ${factor.color}`}>+{factor.val}</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${factor.bar} rounded-full`}
+                      style={{ width: `${Math.min(100, (factor.val / 3) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* 4. Duplicate Information (Section 15.5) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
+          {/* 4. Duplicate Information */}
+          <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 <Copy className="w-4 h-4 text-amber-400" />
                 Duplicate & Repeat Incident Advisory
               </span>
               <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                   dup.duplicate_status === "duplicate"
-                    ? "bg-amber-950 text-amber-300 border border-amber-800"
+                    ? "badge-high"
                     : dup.duplicate_status === "repeat"
-                    ? "bg-orange-950 text-orange-300 border border-orange-800"
+                    ? "badge-critical"
                     : "bg-slate-800 text-slate-400 border border-slate-700"
                 }`}
               >
@@ -473,23 +497,23 @@ export default function ComplaintDetailPage({
             </div>
 
             {dup.duplicate_status !== "unique" ? (
-              <div className="p-3.5 rounded-lg bg-amber-950/30 border border-amber-800/50 space-y-2 text-xs">
+              <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-800/40 space-y-2 text-xs">
                 <div className="flex items-center justify-between text-amber-300 font-semibold">
                   <span>Matched Cluster: {dup.matched_incident_id || "INC-CLUSTER"}</span>
                   <span className="font-mono">
                     Similarity: {Math.round((dup.similarity_score || 0) * 100)}%
                   </span>
                 </div>
-                <p className="text-slate-300 leading-relaxed">{dup.duplicate_summary}</p>
+                <p className="text-slate-200 leading-relaxed">{dup.duplicate_summary}</p>
                 {dup.cluster_complaints_count > 0 && (
-                  <div className="text-[11px] text-amber-400 font-medium">
+                  <div className="text-[11px] text-amber-400 font-semibold pt-1">
                     {dup.cluster_complaints_count} related complaints currently associated with this incident cluster.
                   </div>
                 )}
               </div>
             ) : (
-              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-400">
-                Unique complaint. No semantic vector duplicates or repeat recurring incidents detected within the advisory window.
+              <div className="p-3.5 rounded-xl bg-slate-900/50 border border-white/[0.06] text-xs text-slate-400">
+                Unique complaint. No repeat incidents or spatial duplicates detected in the active time window.
               </div>
             )}
           </div>
@@ -497,16 +521,16 @@ export default function ComplaintDetailPage({
 
         {/* Right Column: Operator Workflow & Review (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Operator Controls Box (Section 15.6 & 16) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-blue-400" />
+          {/* Operator Decision Console */}
+          <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
                 Human Operator Decision
               </span>
               {op.operator_decision && (
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
-                  Decision: {op.operator_decision}
+                <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                  Logged: {op.operator_decision}
                 </span>
               )}
             </div>
@@ -515,47 +539,47 @@ export default function ComplaintDetailPage({
             {reviewMode === "view" && (
               <div className="space-y-4">
                 <p className="text-xs text-slate-400">
-                  Select an operational action. The AI recommendations remain permanently archived and will never be overwritten.
+                  Review and choose an operational action. The AI recommendations remain permanently archived and will never be overwritten.
                 </p>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => setReviewMode("approve_confirm")}
                     disabled={actionLoading}
-                    className="flex flex-col items-center justify-center p-3 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/80 text-emerald-300 font-semibold text-xs transition-colors"
+                    className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/70 text-emerald-300 font-bold text-xs transition-all hover:scale-[1.02]"
                   >
-                    <CheckCircle2 className="w-5 h-5 mb-1 text-emerald-400" />
-                    Approve
+                    <CheckCircle2 className="w-5 h-5 mb-1.5 text-emerald-400" />
+                    <span>Approve</span>
                   </button>
 
                   <button
                     onClick={() => setReviewMode("edit")}
                     disabled={actionLoading}
-                    className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-950/60 hover:bg-blue-900 border border-blue-800/80 text-blue-300 font-semibold text-xs transition-colors"
+                    className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/70 text-blue-300 font-bold text-xs transition-all hover:scale-[1.02]"
                   >
-                    <Edit3 className="w-5 h-5 mb-1 text-blue-400" />
-                    Edit
+                    <Edit3 className="w-5 h-5 mb-1.5 text-blue-400" />
+                    <span>Edit</span>
                   </button>
 
                   <button
                     onClick={() => setReviewMode("reject_confirm")}
                     disabled={actionLoading}
-                    className="flex flex-col items-center justify-center p-3 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 font-semibold text-xs transition-colors"
+                    className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/70 text-rose-300 font-bold text-xs transition-all hover:scale-[1.02]"
                   >
-                    <XCircle className="w-5 h-5 mb-1 text-rose-400" />
-                    Reject
+                    <XCircle className="w-5 h-5 mb-1.5 text-rose-400" />
+                    <span>Reject</span>
                   </button>
                 </div>
 
                 {op.operator_notes && (
-                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
+                  <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/[0.06] text-xs">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
                       Existing Operator Audit Note
                     </span>
-                    <p className="text-slate-300">{op.operator_notes}</p>
+                    <p className="text-slate-200">{op.operator_notes}</p>
                     {op.operator_reviewed_at && (
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        Reviewed at: {new Date(op.operator_reviewed_at).toLocaleString()}
+                      <p className="text-[10px] text-slate-500 mt-1 font-mono">
+                        Reviewed: {new Date(op.operator_reviewed_at).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -563,11 +587,11 @@ export default function ComplaintDetailPage({
               </div>
             )}
 
-            {/* Mode 2: Edit Form (Section 16) */}
+            {/* Mode 2: Edit Form */}
             {reviewMode === "edit" && (
               <div className="space-y-3 pt-1">
-                <div className="p-2.5 rounded bg-blue-950/50 border border-blue-800/50 text-[11px] text-blue-300">
-                  Editing operator decision values. Original AI prediction is protected and will not be overwritten.
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 leading-relaxed">
+                  Editing operator values. Original AI prediction is protected and will not be overwritten.
                 </div>
 
                 <div>
@@ -580,7 +604,7 @@ export default function ComplaintDetailPage({
                       setEditDept(e.target.value);
                       setEditCat("");
                     }}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                   >
                     <option value="">Select Department</option>
                     {taxonomy?.departments.map((d) => (
@@ -598,7 +622,7 @@ export default function ComplaintDetailPage({
                   <select
                     value={editCat}
                     onChange={(e) => setEditCat(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                   >
                     <option value="">Select Category</option>
                     {availableCategories.map((c) => (
@@ -619,7 +643,7 @@ export default function ComplaintDetailPage({
                       value={editLoc}
                       onChange={(e) => setEditLoc(e.target.value)}
                       placeholder="e.g. Kolar"
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                     />
                   </div>
 
@@ -632,7 +656,7 @@ export default function ComplaintDetailPage({
                       value={editWard}
                       onChange={(e) => setEditWard(e.target.value)}
                       placeholder="e.g. 80"
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                     />
                   </div>
                 </div>
@@ -644,7 +668,7 @@ export default function ComplaintDetailPage({
                   <select
                     value={editUrgency}
                     onChange={(e) => setEditUrgency(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                   >
                     <option value="CRITICAL">CRITICAL</option>
                     <option value="HIGH">HIGH</option>
@@ -662,7 +686,7 @@ export default function ComplaintDetailPage({
                     value={operatorNotes}
                     onChange={(e) => setOperatorNotes(e.target.value)}
                     placeholder="Provide justification for edits or field verification notes..."
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                   />
                 </div>
 
@@ -678,7 +702,7 @@ export default function ComplaintDetailPage({
                     type="button"
                     onClick={handleSaveEdit}
                     disabled={actionLoading}
-                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-lg transition-colors"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-colors"
                   >
                     {actionLoading ? "Saving..." : "Save Operator Edits"}
                   </button>
@@ -689,7 +713,7 @@ export default function ComplaintDetailPage({
             {/* Mode 3: Approve Confirmation */}
             {reviewMode === "approve_confirm" && (
               <div className="space-y-3 pt-1">
-                <div className="p-3 rounded bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-300">
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-300">
                   Accept AI triage recommendation as official municipal ticket assignment.
                 </div>
                 <div>
@@ -701,7 +725,7 @@ export default function ComplaintDetailPage({
                     value={operatorNotes}
                     onChange={(e) => setOperatorNotes(e.target.value)}
                     placeholder="e.g. Verified by operator via phone call..."
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                   />
                 </div>
                 <div className="flex items-center justify-end gap-2 pt-2">
@@ -714,7 +738,7 @@ export default function ComplaintDetailPage({
                   <button
                     onClick={handleApprove}
                     disabled={actionLoading}
-                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg transition-colors"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-colors"
                   >
                     {actionLoading ? "Processing..." : "Confirm Approval"}
                   </button>
@@ -725,7 +749,7 @@ export default function ComplaintDetailPage({
             {/* Mode 4: Reject Confirmation */}
             {reviewMode === "reject_confirm" && (
               <div className="space-y-3 pt-1">
-                <div className="p-3 rounded bg-rose-950/40 border border-rose-800/60 text-xs text-rose-300">
+                <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-xs text-rose-300">
                   Reject and close this grievance (e.g. duplicate or out of municipal jurisdiction).
                 </div>
                 <div>
@@ -737,7 +761,7 @@ export default function ComplaintDetailPage({
                     value={operatorNotes}
                     onChange={(e) => setOperatorNotes(e.target.value)}
                     placeholder="Specify why grievance is being rejected..."
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                   />
                 </div>
                 <div className="flex items-center justify-end gap-2 pt-2">
@@ -750,7 +774,7 @@ export default function ComplaintDetailPage({
                   <button
                     onClick={handleReject}
                     disabled={actionLoading}
-                    className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg transition-colors"
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition-colors"
                   >
                     {actionLoading ? "Processing..." : "Confirm Rejection"}
                   </button>
@@ -759,87 +783,96 @@ export default function ComplaintDetailPage({
             )}
           </div>
 
-          {/* Audit Comparison: AI Prediction vs Operator Decision */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          {/* Audit Comparison Table */}
+          <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-3.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
               <Scale className="w-4 h-4 text-blue-400" />
-              AI vs. Human Decision Audit Comparison
+              AI vs. Operator Audit Comparison
             </span>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 text-[10px] uppercase font-semibold text-slate-400 border-b border-slate-800">
+                <thead className="bg-[#030712]/90 text-[10px] uppercase font-bold text-slate-400 border-b border-white/[0.06]">
                   <tr>
-                    <th className="px-3 py-2">Field</th>
-                    <th className="px-3 py-2 text-blue-400">AI Prediction</th>
-                    <th className="px-3 py-2 text-emerald-400">Operator Decision</th>
+                    <th className="px-3.5 py-2.5">Field</th>
+                    <th className="px-3.5 py-2.5 text-blue-400">AI Prediction</th>
+                    <th className="px-3.5 py-2.5 text-emerald-400">Operator Decision</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800 font-medium">
+                <tbody className="divide-y divide-white/[0.04] font-medium bg-slate-900/40">
                   <tr>
-                    <td className="px-3 py-2 text-slate-400">Department</td>
-                    <td className="px-3 py-2 text-slate-200">{ai.department || "—"}</td>
-                    <td className="px-3 py-2 text-white font-semibold">{op.operator_department || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-slate-400">Department</td>
+                    <td className="px-3.5 py-2.5 text-slate-200">{ai.department || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-white font-bold">{op.operator_department || "—"}</td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-2 text-slate-400">Category</td>
-                    <td className="px-3 py-2 text-slate-200">{ai.category || "—"}</td>
-                    <td className="px-3 py-2 text-white font-semibold">{op.operator_category || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-slate-400">Category</td>
+                    <td className="px-3.5 py-2.5 text-slate-200">{ai.category || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-white font-bold">{op.operator_category || "—"}</td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-2 text-slate-400">Locality</td>
-                    <td className="px-3 py-2 text-slate-200">{ai.locality || "—"}</td>
-                    <td className="px-3 py-2 text-white font-semibold">{op.operator_locality || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-slate-400">Locality</td>
+                    <td className="px-3.5 py-2.5 text-slate-200">{ai.locality || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-white font-bold">{op.operator_locality || "—"}</td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-2 text-slate-400">Ward</td>
-                    <td className="px-3 py-2 text-slate-200">{ai.ward || "—"}</td>
-                    <td className="px-3 py-2 text-white font-semibold">{op.operator_ward || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-slate-400">Ward</td>
+                    <td className="px-3.5 py-2.5 text-slate-200">{ai.ward || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-white font-bold">{op.operator_ward || "—"}</td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-2 text-slate-400">Urgency</td>
-                    <td className="px-3 py-2 text-slate-200">{ai.urgency || "—"}</td>
-                    <td className="px-3 py-2 text-white font-semibold">{op.operator_urgency || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-slate-400">Urgency</td>
+                    <td className="px-3.5 py-2.5 text-slate-200">{ai.urgency || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-white font-bold">{op.operator_urgency || "—"}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <p className="text-[10px] text-slate-500 italic pt-1">
-              Guaranteed by architecture: AI recommendations remain intact for human correction rate evaluation.
+            <p className="text-[10px] text-slate-500 italic">
+              Guaranteed by architecture: AI predictions remain archived for model benchmark & accuracy evaluation.
             </p>
           </div>
 
-          {/* Citizen Acknowledgement Draft (Section 11) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
+          {/* Citizen Acknowledgement Draft */}
+          <div className="glass-panel rounded-2xl p-6 border border-[var(--border-subtle)] space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-emerald-400" />
                 Citizen Acknowledgement Draft
               </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">
-                DRAFT ONLY • NOT SENT
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                DRAFT ONLY • ZERO DISPATCH
               </span>
             </div>
 
             <p className="text-[11px] text-slate-400">
-              Generated municipal communication draft. No external dispatches (SMS/email/WhatsApp) are triggered.
+              Auto-generated formal citizen draft. No external messages are transmitted without human confirmation.
             </p>
 
             <textarea
               rows={5}
               value={ackDraft}
               onChange={(e) => setAckDraft(e.target.value)}
-              className="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500 leading-relaxed"
+              className="w-full p-3.5 bg-slate-950/80 border border-white/[0.08] rounded-xl text-xs font-mono text-slate-200 leading-relaxed"
             />
 
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between pt-1">
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-blue-400" />}
+                <span>{copied ? "Copied!" : "Copy Draft"}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleSaveDraft}
                 disabled={draftSaving}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors"
               >
-                <Save className="w-3.5 h-3.5 text-blue-400" />
-                <span>{draftSaving ? "Saving Draft..." : "Save Draft Text"}</span>
+                <Save className="w-3.5 h-3.5" />
+                <span>{draftSaving ? "Saving..." : "Save Draft"}</span>
               </button>
             </div>
           </div>

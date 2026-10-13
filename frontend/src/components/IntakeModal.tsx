@@ -13,6 +13,9 @@ import {
   Loader2,
   ArrowRight,
   Sparkles,
+  Zap,
+  Volume2,
+  ImageIcon,
 } from "lucide-react";
 import {
   transcribeAudio,
@@ -173,22 +176,26 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop overflow-y-auto">
+      <div className="relative w-full max-w-2xl rounded-3xl glass-panel-elevated overflow-hidden my-8 animate-float-up border border-[var(--border-default)]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900/80">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)] bg-[#030712]/60">
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-blue-400" />
-              Multimodal Complaint Intake
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Submit civic grievances via text, citizen voice audio, or photo evidence into the AI triage pipeline.
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
+                <Sparkles className="w-4 h-4" />
+              </span>
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                Multimodal Grievance Ingestion
+              </h2>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Ingest text, citizen voice notes, or photo evidence directly into the Gemini triage pipeline.
             </p>
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -196,41 +203,41 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
 
         {/* Success State */}
         {result ? (
-          <div className="p-8 space-y-6">
-            <div className="p-4 rounded-xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-200 flex items-start gap-3">
+          <div className="p-7 space-y-6">
+            <div className="p-5 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 flex items-start gap-3.5">
               <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-emerald-300">Complaint Triaged Successfully!</h3>
-                <p className="text-xs text-emerald-300/80 mt-1">
+                <h3 className="font-bold text-emerald-300 text-sm">Grievance Triaged Successfully!</h3>
+                <p className="text-xs text-emerald-300/80 mt-1 leading-relaxed">
                   Ticket <span className="font-mono font-bold text-white">{result.complaint_id}</span> has been processed
                   through urgency scoring, locality normalization, and duplicate detection.
                 </p>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-white/[0.08] space-y-3">
+              <div className="grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="text-slate-500 uppercase font-semibold">Assigned Department</span>
-                  <p className="text-sm font-semibold text-white mt-0.5">
+                  <span className="text-slate-400 uppercase font-bold text-[10px]">Assigned Department</span>
+                  <p className="text-sm font-bold text-white mt-1">
                     {result.ai_recommendation.department || "General Administration"}
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-500 uppercase font-semibold">Category</span>
-                  <p className="text-sm font-semibold text-slate-200 mt-0.5">
+                  <span className="text-slate-400 uppercase font-bold text-[10px]">Category</span>
+                  <p className="text-sm font-semibold text-slate-200 mt-1">
                     {result.ai_recommendation.category || "Unclassified"}
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-500 uppercase font-semibold">Urgency Assessment</span>
-                  <p className="text-sm font-semibold text-amber-400 mt-0.5">
+                  <span className="text-slate-400 uppercase font-bold text-[10px]">Urgency Assessment</span>
+                  <p className="text-sm font-bold text-amber-400 mt-1">
                     {result.ai_recommendation.urgency || "MEDIUM"} (Score: {result.ai_recommendation.urgency_score || 0}/12)
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-500 uppercase font-semibold">Duplicate Advisory</span>
-                  <p className="text-sm font-semibold text-slate-300 mt-0.5 capitalize">
+                  <span className="text-slate-400 uppercase font-bold text-[10px]">Duplicate Status</span>
+                  <p className="text-sm font-semibold text-slate-300 mt-1 capitalize">
                     {result.duplicate_info.duplicate_status || "Unique"}
                   </p>
                 </div>
@@ -240,16 +247,16 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={resetAll}
-                className="px-4 py-2 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                className="px-4 py-2.5 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
               >
                 Submit Another Complaint
               </button>
               <Link
                 href={`/complaints/${result.complaint_id}`}
                 onClick={handleClose}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-sm transition-colors"
+                className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/25 transition-all"
               >
-                Open Ticket for Review
+                <span>Open Ticket for Review</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -257,48 +264,48 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
         ) : (
           <form onSubmit={handleSubmitTriage} className="p-6 space-y-5">
             {/* Tabs */}
-            <div className="flex border-b border-slate-800">
+            <div className="flex p-1 rounded-xl bg-slate-900/80 border border-white/[0.06] text-xs">
               <button
                 type="button"
                 onClick={() => setActiveTab("text")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${
                   activeTab === "text"
-                    ? "border-blue-500 text-blue-400"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 <FileText className="w-4 h-4" />
-                Text Intake
+                <span>Text Grievance</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("audio")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${
                   activeTab === "audio"
-                    ? "border-blue-500 text-blue-400"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 <Mic className="w-4 h-4" />
-                Voice / Audio Intake
+                <span>Voice Audio</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("image")}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${
                   activeTab === "image"
-                    ? "border-blue-500 text-blue-400"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 <Camera className="w-4 h-4" />
-                Photo Evidence Intake
+                <span>Photo Evidence</span>
               </button>
             </div>
 
             {error && (
-              <div className="p-3.5 rounded-lg bg-red-950/60 border border-red-800/80 text-red-200 text-xs flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
             )}
@@ -307,22 +314,22 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
             {activeTab === "text" && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                     Citizen Complaint Statement
                   </label>
                   <textarea
                     rows={4}
-                    placeholder="Enter verbatim complaint in Hindi, Hinglish, or English..."
+                    placeholder="Enter citizen grievance in Hindi, Hinglish, or English..."
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 bg-slate-900 border border-white/[0.1] rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors leading-relaxed"
                   />
                 </div>
 
                 {/* Quick Demo Pre-sets */}
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
-                    Quick Demo Presets
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                    Quick Scenario Presets:
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -331,9 +338,9 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                         setRawText("Kolar me 3 din se paani nahi aa raha hai, pipeline phat gayi hai.");
                         setLanguage("Hinglish");
                       }}
-                      className="px-2.5 py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/[0.06] transition-colors"
                     >
-                      💧 Multilingual (Kolar Water)
+                      💧 Kolar Pipeline Burst
                     </button>
                     <button
                       type="button"
@@ -341,9 +348,9 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                         setRawText("Urgent: Main road open manhole in MP Nagar Zone 1, two wheelers falling, severe hazard.");
                         setLanguage("English");
                       }}
-                      className="px-2.5 py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/[0.06] transition-colors"
                     >
-                      🚨 Critical Hazard (MP Nagar Drain)
+                      🚨 MP Nagar Open Manhole
                     </button>
                     <button
                       type="button"
@@ -351,9 +358,9 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                         setRawText("Arera Colony E-sector mein pichle ek hafte se kachra nahi utha hai, bohot badbu aa rahi hai.");
                         setLanguage("Hinglish");
                       }}
-                      className="px-2.5 py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/[0.06] transition-colors"
                     >
-                      🗑️ Sanitation (Arera Garbage)
+                      🗑️ Arera Colony Garbage
                     </button>
                   </div>
                 </div>
@@ -363,24 +370,24 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
             {/* TAB 2: AUDIO */}
             {activeTab === "audio" && (
               <div className="space-y-4">
-                <div className="p-4 border-2 border-dashed border-slate-700 rounded-xl bg-slate-950/60 text-center">
-                  <UploadCloud className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                  <p className="text-xs text-slate-300 font-medium">Upload audio recording</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Supports .wav, .mp3, .ogg, .m4a, .webm (max 25MB)</p>
+                <div className="p-6 border-2 border-dashed border-slate-700/80 rounded-2xl bg-slate-900/40 text-center">
+                  <UploadCloud className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                  <p className="text-xs text-slate-200 font-bold">Upload voice note recording</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Supports .wav, .mp3, .ogg, .m4a, .webm (max 25MB)</p>
                   <input
                     type="file"
                     accept="audio/*"
                     onChange={(e) => {
                       if (e.target.files?.[0]) handleAudioUpload(e.target.files[0]);
                     }}
-                    className="mt-3 text-xs text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
+                    className="mt-3 text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
                   />
                 </div>
 
                 {/* Demo Audio Buttons */}
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
-                    Or select demo voice recording:
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                    Or select pre-recorded voice note:
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -391,9 +398,9 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                           "Kolar me 3 din se paani nahi aa raha hai kripya jaldi theek karein, pipeline leak ho rahi hai."
                         )
                       }
-                      className="px-2.5 py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/[0.06] transition-colors"
                     >
-                      🎙️ Audio: Kolar Water Call
+                      🎙️ Audio: Kolar Water Supply
                     </button>
                     <button
                       type="button"
@@ -403,25 +410,25 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                           "Hamare MP Nagar main road par bohot bada gaddha ho gaya hai, bikes gir rahi hain."
                         )
                       }
-                      className="px-2.5 py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/[0.06] transition-colors"
                     >
-                      🎙️ Audio: Pothole Hazard Call
+                      🎙️ Audio: Road Pothole Call
                     </button>
                   </div>
                 </div>
 
                 {transcribing && (
-                  <div className="flex items-center justify-center gap-2 p-3 bg-blue-950/40 rounded-lg text-xs text-blue-300">
+                  <div className="flex items-center justify-center gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 font-semibold">
                     <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                    Transcribing speech to text...
+                    Transcribing speech with speech model...
                   </div>
                 )}
 
                 {transcript && (
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1.5 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      Operator Transcript Inspection (Editable)
+                      Speech Transcript (Editable)
                     </label>
                     <textarea
                       rows={3}
@@ -430,7 +437,7 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                         setTranscript(e.target.value);
                         setRawText(e.target.value);
                       }}
-                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-emerald-800/80 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-slate-900 border border-emerald-500/40 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 )}
@@ -440,36 +447,36 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
             {/* TAB 3: IMAGE */}
             {activeTab === "image" && (
               <div className="space-y-4">
-                <div className="p-4 border-2 border-dashed border-slate-700 rounded-xl bg-slate-950/60 text-center">
-                  <Camera className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                  <p className="text-xs text-slate-300 font-medium">Upload grievance photograph</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Supports .jpg, .png, .webp</p>
+                <div className="p-6 border-2 border-dashed border-slate-700/80 rounded-2xl bg-slate-900/40 text-center">
+                  <Camera className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                  <p className="text-xs text-slate-200 font-bold">Upload citizen photo</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Supports .jpg, .png, .webp evidence files</p>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
                       if (e.target.files?.[0]) handleImageUpload(e.target.files[0]);
                     }}
-                    className="mt-3 text-xs text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
+                    className="mt-3 text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                     Optional Citizen Caption
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Road near Kolar has a dangerous pothole..."
+                    placeholder="e.g. Deep pothole causing accidents near Kolar market..."
                     value={imageCaption}
                     onChange={(e) => setImageCaption(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full px-3.5 py-2.5 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white placeholder-slate-500"
                   />
                 </div>
 
-                {/* Demo Photo Buttons */}
+                {/* Demo Photo Scenarios */}
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
                     Or select demo photo scenario:
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -482,9 +489,9 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                           "Visual Evidence: Photo shows a severe deep pothole and broken asphalt hazard on the road. Citizen caption: 'Dangerous deep pothole near Kolar market'."
                         )
                       }
-                      className="px-2.5 py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/[0.06] transition-colors"
                     >
-                      📷 Photo: Kolar Pothole
+                      📷 Photo: Kolar Road Pothole
                     </button>
                     <button
                       type="button"
@@ -495,25 +502,25 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                           "Visual Evidence: Photo shows an overflowing municipal garbage dump with uncollected waste scattered on the street. Citizen caption: 'Garbage pile overflowing for 5 days'."
                         )
                       }
-                      className="px-2.5 py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/[0.06] transition-colors"
                     >
-                      📷 Photo: Overflowing Garbage
+                      📷 Photo: Waste Overflow
                     </button>
                   </div>
                 </div>
 
                 {analyzingImage && (
-                  <div className="flex items-center justify-center gap-2 p-3 bg-blue-950/40 rounded-lg text-xs text-blue-300">
+                  <div className="flex items-center justify-center gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 font-semibold">
                     <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                    Extracting visual evidence and problem representation...
+                    Extracting problem representations via Gemini Vision...
                   </div>
                 )}
 
                 {extractedDescription && (
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1.5 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      Common Complaint Representation (Visual + Caption)
+                      Visual Ingestion Summary
                     </label>
                     <textarea
                       rows={3}
@@ -522,7 +529,7 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                         setExtractedDescription(e.target.value);
                         setRawText(e.target.value);
                       }}
-                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-emerald-800/80 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-slate-900 border border-emerald-500/40 rounded-xl text-xs text-white"
                     />
                   </div>
                 )}
@@ -530,13 +537,13 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
             )}
 
             {/* Channels & Language */}
-            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800">
+            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/[0.06]">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Source Channel</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5">Source Channel</label>
                 <select
                   value={sourceChannel}
                   onChange={(e) => setSourceChannel(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                 >
                   <option value="Web Portal">Web Portal</option>
                   <option value="Helpline 181">Helpline 181</option>
@@ -548,11 +555,11 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Language</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5">Language</label>
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-slate-900 border border-white/[0.1] rounded-xl text-xs text-white"
                 >
                   <option value="Hinglish">Hinglish</option>
                   <option value="Hindi">Hindi</option>
@@ -562,29 +569,29 @@ export default function IntakeModal({ isOpen, onClose, onSuccess }: IntakeModalP
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.06]">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={submitting}
-                className="px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+                className="px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting || !rawText.trim()}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:pointer-events-none rounded-lg shadow-sm transition-colors"
+                className="btn-sheen flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:pointer-events-none rounded-xl shadow-lg shadow-blue-500/25 transition-all"
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Running AI Triage...
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Running AI Triage...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Submit & Run AI Triage
+                    <Sparkles className="w-4 h-4" />
+                    <span>Submit & Run AI Triage</span>
                   </>
                 )}
               </button>
